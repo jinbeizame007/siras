@@ -1,3 +1,14 @@
+pub struct ContinuousTransferFunction {
+    num: Vec<f64>,
+    den: Vec<f64>,
+}
+
+impl ContinuousTransferFunction {
+    pub fn new(num: Vec<f64>, den: Vec<f64>) -> Self {
+        Self { num, den }
+    }
+}
+
 pub struct DiscreteTransferFunction {
     num: Vec<f64>,
     den: Vec<f64>,
