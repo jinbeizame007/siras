@@ -1,3 +1,5 @@
+use nalgebra::DMatrix;
+
 pub struct ContinuousTransferFunction {
     num: Vec<f64>,
     den: Vec<f64>,
@@ -40,5 +42,18 @@ impl DiscreteTransferFunction {
         self.outputs[0] = output;
 
         output
+    }
+}
+
+pub struct StateSpace {
+    a: DMatrix<f64>,
+    b: DMatrix<f64>,
+    c: DMatrix<f64>,
+    d: DMatrix<f64>,
+}
+
+impl StateSpace {
+    pub fn new(a: DMatrix<f64>, b: DMatrix<f64>, c: DMatrix<f64>, d: DMatrix<f64>) -> Self {
+        Self { a, b, c, d }
     }
 }
