@@ -22,7 +22,12 @@ impl DiscreteTransferFunction {
     pub fn new(num: Vec<f64>, den: Vec<f64>) -> Self {
         let inputs = vec![0.0; num.len()];
         let outputs = vec![0.0; den.len()];
-        Self { num, den, inputs, outputs }
+        Self {
+            num,
+            den,
+            inputs,
+            outputs,
+        }
     }
 
     pub fn step(&mut self, input: f64) -> f64 {
