@@ -68,6 +68,31 @@ impl ContinuousStateSpace {
     pub fn new(a: DMatrix<f64>, b: DMatrix<f64>, c: DMatrix<f64>, d: DMatrix<f64>) -> Self {
         Self { a, b, c, d }
     }
+
+    pub fn to_discrete(&self, dt: f64) -> DiscreteStateSpace {
+        let a = self.a.clone();
+        let b = self.b.clone();
+        let c = self.c.clone();
+        let d = self.d.clone();
+
+        let alpha = 0.5;
+        let ima = DMatrix::identity(a.nrows(), a.nrows()) - alpha * dt * a;
+        let ima_lu = ima.clone().lu();
+        let ad = ima_lu
+            .solve(&(DMatrix::identity(a.nrows(), a.nrows()) + (1.0 - alpha) * dt * a))
+            .unwrap();
+        let bd = ima_lu.solve(&(dt * b)).unwrap();
+        let cd = ima.transpose().lu().solve(&c.transpose()).unwrap();
+        let dd = d + alpha * (c * &bd);
+
+        DiscreteStateSpace {
+            a: ad,
+            b: bd,
+            c: cd,
+            d: dd,
+            dt,
+        }
+    }
 }
 
 impl From<ContinuousTransferFunction> for ContinuousStateSpace {
@@ -109,33 +134,5 @@ impl DiscreteStateSpace {
         dt: f64,
     ) -> Self {
         Self { a, b, c, d, dt }
-    }
-}
-
-impl From<ContinuousStateSpace> for DiscreteStateSpace {
-    fn from(cont_state_space: ContinuousStateSpace) -> Self {
-        let a = cont_state_space.a.clone();
-        let b = cont_state_space.b.clone();
-        let c = cont_state_space.c.clone();
-        let d = cont_state_space.d.clone();
-        let dt = 0.1;
-
-        let alpha = 0.5;
-        let ima = DMatrix::identity(a.nrows(), a.nrows()) - alpha * tf.dt * a;
-        let ad = ima
-            .lu()
-            .solve(&(DMatrix::identity(a.nrows(), a.nrows()) + (1.0 - alpha) * dt * a))
-            .unwrap();
-        let bd = ima.lu().solve(&(dt * b)).unwrap();
-        let cd = ima.transpose().lu().solve(&c.transpose()).unwrap();
-        let dd = d + alpha * (c * bd);
-
-        DiscreteStateSpace {
-            a: ad,
-            b: bd,
-            c: cd,
-            d: dd,
-            dt,
-        }
     }
 }
