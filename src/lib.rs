@@ -101,11 +101,16 @@ impl ContinuousStateSpace {
 
 impl From<ContinuousTransferFunction> for ContinuousStateSpace {
     fn from(tf: ContinuousTransferFunction) -> Self {
-        // Normalize the numerator and denominator
-        let num = tf.num.clone() / tf.den[0];
-        let den = tf.den.clone() / tf.den[0];
+        assert!(
+            tf.den.len() >= tf.num.len(),
+            "The order of the denominator must be greater than or equal to the order of the numerator."
+        );
 
-        let n = den.len() - 1; // Order
+        let n = tf.den.len() - 1; // Order
+
+        // Normalize the numerator and denominator
+        let num = stack![DVector::zeros(tf.den.len() - tf.num.len()); tf.num.clone()] / tf.den[0];
+        let den = tf.den.clone() / tf.den[0];
 
         let a = stack![
             -den.rows(1, n).transpose();
@@ -113,7 +118,7 @@ impl From<ContinuousTransferFunction> for ContinuousStateSpace {
         ];
         let b = DMatrix::identity(n, 1);
         let c = DMatrix::from_row_slice(1, n, num.rows(1, n).as_slice())
-            - DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
+            - num[0] * DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
         let d = DMatrix::from_row_slice(1, 1, &[num[0]]);
         ContinuousStateSpace { a, b, c, d }
     }
@@ -157,6 +162,26 @@ mod tests {
         let expected_b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
         let expected_c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
         let expected_d = DMatrix::from_row_slice(1, 1, &[1.0]);
+
+        assert_relative_eq!(ss.a, expected_a);
+        assert_relative_eq!(ss.b, expected_b);
+        assert_relative_eq!(ss.c, expected_c);
+        assert_relative_eq!(ss.d, expected_d);
+    }
+
+    #[test]
+    fn test_continuous_transfer_function_to_continuous_state_space_different_order() {
+        let num = DVector::from_vec(vec![1.0, 2.0, 3.0]);
+        let den = DVector::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
+        let dt = 0.1;
+        let tf = ContinuousTransferFunction::new(num, den, dt);
+        let ss = ContinuousStateSpace::from(tf);
+
+        let expected_a =
+            DMatrix::from_row_slice(3, 3, &[-2.0, -3.0, -4.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
+        let expected_b = DMatrix::from_row_slice(3, 1, &[1.0, 0.0, 0.0]);
+        let expected_c = DMatrix::from_row_slice(1, 3, &[1.0, 2.0, 3.0]);
+        let expected_d = DMatrix::from_row_slice(1, 1, &[0.0]);
 
         assert_relative_eq!(ss.a, expected_a);
         assert_relative_eq!(ss.b, expected_b);
