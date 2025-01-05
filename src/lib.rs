@@ -3,11 +3,12 @@ use nalgebra::{stack, DMatrix, DVector};
 pub struct ContinuousTransferFunction {
     num: DVector<f64>,
     den: DVector<f64>,
+    dt: f64,
 }
 
 impl ContinuousTransferFunction {
-    pub fn new(num: DVector<f64>, den: DVector<f64>) -> Self {
-        Self { num, den }
+    pub fn new(num: DVector<f64>, den: DVector<f64>, dt: f64) -> Self {
+        Self { num, den, dt }
     }
 }
 
@@ -16,10 +17,11 @@ pub struct DiscreteTransferFunction {
     den: DVector<f64>,
     inputs: DVector<f64>,
     outputs: DVector<f64>,
+    dt: f64,
 }
 
 impl DiscreteTransferFunction {
-    pub fn new(num: DVector<f64>, den: DVector<f64>) -> Self {
+    pub fn new(num: DVector<f64>, den: DVector<f64>, dt: f64) -> Self {
         let inputs = DVector::zeros(num.len());
         let outputs = DVector::zeros(den.len());
 
@@ -28,6 +30,7 @@ impl DiscreteTransferFunction {
             den,
             inputs,
             outputs,
+            dt,
         }
     }
 
@@ -54,24 +57,20 @@ impl DiscreteTransferFunction {
     }
 }
 
-pub struct StateSpace {
-    #[allow(dead_code)]
-    a: DMatrix<f64>,
-    #[allow(dead_code)]
-    b: DMatrix<f64>,
-    #[allow(dead_code)]
-    c: DMatrix<f64>,
-    #[allow(dead_code)]
-    d: DMatrix<f64>,
+pub struct ContinuousStateSpace {
+    pub a: DMatrix<f64>,
+    pub b: DMatrix<f64>,
+    pub c: DMatrix<f64>,
+    pub d: DMatrix<f64>,
 }
 
-impl StateSpace {
+impl ContinuousStateSpace {
     pub fn new(a: DMatrix<f64>, b: DMatrix<f64>, c: DMatrix<f64>, d: DMatrix<f64>) -> Self {
         Self { a, b, c, d }
     }
 }
 
-impl From<ContinuousTransferFunction> for StateSpace {
+impl From<ContinuousTransferFunction> for ContinuousStateSpace {
     fn from(tf: ContinuousTransferFunction) -> Self {
         // Normalize the numerator and denominator
         let num = tf.num.clone() / tf.num[0];
@@ -89,6 +88,26 @@ impl From<ContinuousTransferFunction> for StateSpace {
         );
         let d = DMatrix::zeros(c.nrows(), b.ncols());
 
-        StateSpace { a, b, c, d }
+        ContinuousStateSpace { a, b, c, d }
+    }
+}
+
+pub struct DiscreteStateSpace {
+    pub a: DMatrix<f64>,
+    pub b: DMatrix<f64>,
+    pub c: DMatrix<f64>,
+    pub d: DMatrix<f64>,
+    pub dt: f64,
+}
+
+impl DiscreteStateSpace {
+    pub fn new(
+        a: DMatrix<f64>,
+        b: DMatrix<f64>,
+        c: DMatrix<f64>,
+        d: DMatrix<f64>,
+        dt: f64,
+    ) -> Self {
+        Self { a, b, c, d, dt }
     }
 }
