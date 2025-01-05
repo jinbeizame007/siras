@@ -69,20 +69,24 @@ impl ContinuousStateSpace {
         Self { a, b, c, d }
     }
 
-    pub fn to_discrete(&self, dt: f64) -> DiscreteStateSpace {
+    pub fn to_discrete(&self, dt: f64, alpha: f64) -> DiscreteStateSpace {
         let a = self.a.clone();
         let b = self.b.clone();
         let c = self.c.clone();
         let d = self.d.clone();
 
-        let alpha = 0.5;
         let ima = DMatrix::identity(a.nrows(), a.nrows()) - alpha * dt * &a;
         let ima_lu = ima.clone().lu();
         let ad = ima_lu
             .solve(&(DMatrix::identity(a.nrows(), a.nrows()) + (1.0 - alpha) * dt * &a))
             .unwrap();
         let bd = ima_lu.solve(&(dt * &b)).unwrap();
-        let cd = ima.transpose().lu().solve(&c.transpose()).unwrap();
+        let cd = ima
+            .transpose()
+            .lu()
+            .solve(&c.transpose())
+            .unwrap()
+            .transpose();
         let dd = d + alpha * (&c * &bd);
 
         DiscreteStateSpace {
@@ -158,5 +162,28 @@ mod tests {
         assert_relative_eq!(ss.b, expected_b);
         assert_relative_eq!(ss.c, expected_c);
         assert_relative_eq!(ss.d, expected_d);
+    }
+
+    #[test]
+    fn test_continuous_state_space_to_discrete_state_space() {
+        let ac = DMatrix::identity(2, 2);
+        let bc = DMatrix::from_row_slice(2, 1, &[0.5, 0.5]);
+        let cc = DMatrix::from_row_slice(3, 2, &[0.75, 1.0, 1.0, 1.0, 1.0, 0.25]);
+        let dc = DMatrix::from_row_slice(3, 1, &[0.0, 0.0, -0.33]);
+        let continuous_state_space = ContinuousStateSpace::new(ac, bc, cc, dc);
+
+        let dt = 0.5;
+        let alpha = 1.0 / 3.0;
+        let discrete_state_space = continuous_state_space.to_discrete(dt, alpha);
+
+        let expected_a = 1.6 * DMatrix::identity(2, 2);
+        let expected_b = DMatrix::from_row_slice(2, 1, &[0.3, 0.3]);
+        let expected_c = DMatrix::from_row_slice(3, 2, &[0.9, 1.2, 1.2, 1.2, 1.2, 0.3]);
+        let expected_d = DMatrix::from_row_slice(3, 1, &[0.175, 0.2, -0.205]);
+
+        assert_relative_eq!(discrete_state_space.a, expected_a);
+        assert_relative_eq!(discrete_state_space.b, expected_b);
+        assert_relative_eq!(discrete_state_space.c, expected_c);
+        assert_relative_eq!(discrete_state_space.d, expected_d);
     }
 }
