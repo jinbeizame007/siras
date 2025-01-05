@@ -153,6 +153,25 @@ mod tests {
     use approx::assert_relative_eq;
 
     #[test]
+    fn test_step_discrete_transfer_function() {
+        let num = DVector::from_vec(vec![1.3]);
+        let den = DVector::from_vec(vec![2.0, 1.5]);
+        let dt = 0.1;
+        let mut discrete_tf = DiscreteTransferFunction::new(num, den, dt);
+
+        let inputs = vec![0.2, 0.4, 0.6, 0.8, 1.0];
+        let outputs = inputs
+            .iter()
+            .map(|input| discrete_tf.step(*input))
+            .collect::<Vec<_>>();
+        let expected_outputs = vec![0.13, 0.1625, 0.268125, 0.31890625, 0.41082031];
+
+        for (output, expected_output) in outputs.iter().zip(expected_outputs.iter()) {
+            assert_relative_eq!(output, expected_output);
+        }
+    }
+
+    #[test]
     fn test_continuous_transfer_function_to_continuous_state_space() {
         let num = DVector::from_vec(vec![1.0, 3.0, 3.0]);
         let den = DVector::from_vec(vec![1.0, 2.0, 1.0]);
