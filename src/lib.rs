@@ -3,12 +3,11 @@ use nalgebra::{stack, DMatrix, DVector};
 pub struct ContinuousTransferFunction {
     num: DVector<f64>,
     den: DVector<f64>,
-    dt: f64,
 }
 
 impl ContinuousTransferFunction {
-    pub fn new(num: DVector<f64>, den: DVector<f64>, dt: f64) -> Self {
-        Self { num, den, dt }
+    pub fn new(num: DVector<f64>, den: DVector<f64>) -> Self {
+        Self { num, den }
     }
 }
 
@@ -89,13 +88,7 @@ impl ContinuousStateSpace {
             .transpose();
         let dd = d + alpha * (&c * &bd);
 
-        DiscreteStateSpace {
-            a: ad,
-            b: bd,
-            c: cd,
-            d: dd,
-            dt,
-        }
+        DiscreteStateSpace::new(ad, bd, cd, dd, dt)
     }
 }
 
@@ -129,6 +122,7 @@ pub struct DiscreteStateSpace {
     pub b: DMatrix<f64>,
     pub c: DMatrix<f64>,
     pub d: DMatrix<f64>,
+    pub x: DVector<f64>,
     pub dt: f64,
 }
 
@@ -140,7 +134,15 @@ impl DiscreteStateSpace {
         d: DMatrix<f64>,
         dt: f64,
     ) -> Self {
-        Self { a, b, c, d, dt }
+        let x = DVector::zeros(a.nrows());
+        Self { a, b, c, d, x, dt }
+    }
+
+    pub fn step(&mut self, input: f64) -> f64 {
+        self.x = &self.a * &self.x + &self.b * input;
+        let output = &self.c * &self.x + &self.d * input;
+
+        output[0]
     }
 }
 
@@ -153,9 +155,8 @@ mod tests {
     fn test_continuous_transfer_function_to_continuous_state_space() {
         let num = DVector::from_vec(vec![1.0, 3.0, 3.0]);
         let den = DVector::from_vec(vec![1.0, 2.0, 1.0]);
-        let dt = 0.1;
 
-        let tf = ContinuousTransferFunction::new(num, den, dt);
+        let tf = ContinuousTransferFunction::new(num, den);
         let ss = ContinuousStateSpace::from(tf);
 
         let expected_a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
@@ -173,8 +174,7 @@ mod tests {
     fn test_continuous_transfer_function_to_continuous_state_space_different_order() {
         let num = DVector::from_vec(vec![1.0, 2.0, 3.0]);
         let den = DVector::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
-        let dt = 0.1;
-        let tf = ContinuousTransferFunction::new(num, den, dt);
+        let tf = ContinuousTransferFunction::new(num, den);
         let ss = ContinuousStateSpace::from(tf);
 
         let expected_a =
