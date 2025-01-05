@@ -140,8 +140,8 @@ impl DiscreteStateSpace {
     }
 
     pub fn step(&mut self, input: f64) -> f64 {
-        self.x = &self.a * &self.x + &self.b * input;
         let output = &self.c * &self.x + &self.d * input;
+        self.x = &self.a * &self.x + &self.b * input;
 
         output[0]
     }
@@ -164,7 +164,28 @@ mod tests {
             .iter()
             .map(|input| discrete_tf.step(*input))
             .collect::<Vec<_>>();
-        let expected_outputs = vec![0.13, 0.1625, 0.268125, 0.31890625, 0.41082031];
+        let expected_outputs = vec![0.13, 0.1625, 0.268125, 0.31890625, 0.4108203125];
+
+        for (output, expected_output) in outputs.iter().zip(expected_outputs.iter()) {
+            assert_relative_eq!(output, expected_output);
+        }
+    }
+
+    #[test]
+    fn test_step_discrete_state_space() {
+        let a = DMatrix::from_row_slice(2, 2, &[-2.0, -3.0, 1.0, 0.0]);
+        let b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
+        let c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
+        let d = DMatrix::from_row_slice(1, 1, &[2.0]);
+        let dt = 0.1;
+        let mut discrete_state_space = DiscreteStateSpace::new(a, b, c, d, dt);
+
+        let inputs = vec![0.2, 0.4, 0.6, 0.8, 1.0];
+        let outputs = inputs
+            .iter()
+            .map(|input| discrete_state_space.step(*input))
+            .collect::<Vec<_>>();
+        let expected_outputs = vec![0.4, 1.0, 1.6, 1.6, 2.8];
 
         for (output, expected_output) in outputs.iter().zip(expected_outputs.iter()) {
             assert_relative_eq!(output, expected_output);
