@@ -16,6 +16,7 @@ pub struct DiscreteTransferFunction {
     den: DVector<f64>,
     inputs: DVector<f64>,
     outputs: DVector<f64>,
+    #[allow(unused)]
     dt: f64,
 }
 
