@@ -111,3 +111,31 @@ impl DiscreteStateSpace {
         Self { a, b, c, d, dt }
     }
 }
+
+impl From<ContinuousStateSpace> for DiscreteStateSpace {
+    fn from(cont_state_space: ContinuousStateSpace) -> Self {
+        let a = cont_state_space.a.clone();
+        let b = cont_state_space.b.clone();
+        let c = cont_state_space.c.clone();
+        let d = cont_state_space.d.clone();
+        let dt = 0.1;
+
+        let alpha = 0.5;
+        let ima = DMatrix::identity(a.nrows(), a.nrows()) - alpha * tf.dt * a;
+        let ad = ima
+            .lu()
+            .solve(&(DMatrix::identity(a.nrows(), a.nrows()) + (1.0 - alpha) * dt * a))
+            .unwrap();
+        let bd = ima.lu().solve(&(dt * b)).unwrap();
+        let cd = ima.transpose().lu().solve(&c.transpose()).unwrap();
+        let dd = d + alpha * (c * bd);
+
+        DiscreteStateSpace {
+            a: ad,
+            b: bd,
+            c: cd,
+            d: dd,
+            dt,
+        }
+    }
+}
