@@ -76,14 +76,14 @@ impl ContinuousStateSpace {
         let d = self.d.clone();
 
         let alpha = 0.5;
-        let ima = DMatrix::identity(a.nrows(), a.nrows()) - alpha * dt * a;
+        let ima = DMatrix::identity(a.nrows(), a.nrows()) - alpha * dt * &a;
         let ima_lu = ima.clone().lu();
         let ad = ima_lu
-            .solve(&(DMatrix::identity(a.nrows(), a.nrows()) + (1.0 - alpha) * dt * a))
+            .solve(&(DMatrix::identity(a.nrows(), a.nrows()) + (1.0 - alpha) * dt * &a))
             .unwrap();
-        let bd = ima_lu.solve(&(dt * b)).unwrap();
+        let bd = ima_lu.solve(&(dt * &b)).unwrap();
         let cd = ima.transpose().lu().solve(&c.transpose()).unwrap();
-        let dd = d + alpha * (c * &bd);
+        let dd = d + alpha * (&c * &bd);
 
         DiscreteStateSpace {
             a: ad,
@@ -98,21 +98,19 @@ impl ContinuousStateSpace {
 impl From<ContinuousTransferFunction> for ContinuousStateSpace {
     fn from(tf: ContinuousTransferFunction) -> Self {
         // Normalize the numerator and denominator
-        let num = tf.num.clone() / tf.num[0];
+        let num = tf.num.clone() / tf.den[0];
         let den = tf.den.clone() / tf.den[0];
 
-        let a = stack![
-            -den.rows(1, den.len() - 1),
-            DMatrix::identity(den.len() - 1, den.len() - 1)
-        ];
-        let b = DMatrix::identity(den.len() - 1, 1);
-        let c = DMatrix::from_vec(
-            1,
-            num.len() - 1,
-            num.rows(0, num.len() - 2).as_slice().to_vec(),
-        );
-        let d = DMatrix::zeros(c.nrows(), b.ncols());
+        let n = den.len() - 1; // Order
 
+        let a = stack![
+            -den.rows(1, n).transpose();
+            DMatrix::identity(n - 1, n)
+        ];
+        let b = DMatrix::identity(n, 1);
+        let c = DMatrix::from_row_slice(1, n, num.rows(1, n).as_slice())
+            - DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
+        let d = DMatrix::from_row_slice(1, 1, &[num[0]]);
         ContinuousStateSpace { a, b, c, d }
     }
 }
@@ -134,5 +132,31 @@ impl DiscreteStateSpace {
         dt: f64,
     ) -> Self {
         Self { a, b, c, d, dt }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use approx::assert_relative_eq;
+
+    #[test]
+    fn test_continuous_transfer_function_to_continuous_state_space() {
+        let num = DVector::from_vec(vec![1.0, 3.0, 3.0]);
+        let den = DVector::from_vec(vec![1.0, 2.0, 1.0]);
+        let dt = 0.1;
+
+        let tf = ContinuousTransferFunction::new(num, den, dt);
+        let ss = ContinuousStateSpace::from(tf);
+
+        let expected_a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
+        let expected_b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
+        let expected_c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
+        let expected_d = DMatrix::from_row_slice(1, 1, &[1.0]);
+
+        assert_relative_eq!(ss.a, expected_a);
+        assert_relative_eq!(ss.b, expected_b);
+        assert_relative_eq!(ss.c, expected_c);
+        assert_relative_eq!(ss.d, expected_d);
     }
 }
