@@ -147,6 +147,31 @@ impl DiscreteStateSpace {
     }
 }
 
+fn characteristic_polynomial(matrix: &DMatrix<f64>) -> DVector<f64> {
+    assert_eq!(matrix.nrows(), matrix.ncols(), "Matrix must be square.");
+
+    // nalgebra で固有値を計算
+    // （本来は複素数が返るが、すべて実数と仮定する）
+    let eigenvalues = matrix.clone().eigenvalues().unwrap();
+
+    // (λ - λ_i) の積を 展開して係数を求める
+    let mut coeffs = DVector::from_vec(vec![1.0]);
+
+    for root in eigenvalues.iter() {
+        let degree = coeffs.len();
+        let mut new_coeffs = DVector::zeros(degree + 1);
+        for i in 0..degree {
+            // x^i の係数に x を掛けると x^(i+1) の係数になる
+            new_coeffs[i] += coeffs[i];
+            // x^i の係数に (-root) を掛けると、-root * x^i になる
+            new_coeffs[i + 1] -= root * coeffs[i];
+        }
+        coeffs = new_coeffs;
+    }
+
+    coeffs
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
