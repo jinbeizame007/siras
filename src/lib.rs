@@ -277,4 +277,15 @@ mod tests {
         assert_relative_eq!(discrete_state_space.c, expected_c);
         assert_relative_eq!(discrete_state_space.d, expected_d);
     }
+
+    #[test]
+    fn test_characteristic_polynomial() {
+        let roots = DMatrix::from_row_slice(2, 2, &[1.0, 0.0, 0.0, 1.0]);
+        let coeffs = characteristic_polynomial(&roots);
+        assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, -2.0, 1.0]));
+
+        let roots = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
+        let coeffs = characteristic_polynomial(&roots);
+        assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, -5.0, -2.0]));
+    }
 }
