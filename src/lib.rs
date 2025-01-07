@@ -1,4 +1,4 @@
-use nalgebra::{stack, DMatrix, DVector};
+use nalgebra::{stack, Complex, DMatrix, DVector};
 
 pub struct ContinuousTransferFunction {
     num: DVector<f64>,
@@ -147,29 +147,44 @@ impl DiscreteStateSpace {
     }
 }
 
-fn characteristic_polynomial(matrix: &DMatrix<f64>) -> DVector<f64> {
+fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
     assert_eq!(matrix.nrows(), matrix.ncols(), "Matrix must be square.");
 
-    // nalgebra で固有値を計算
-    // （本来は複素数が返るが、すべて実数と仮定する）
-    let eigenvalues = matrix.clone().eigenvalues().unwrap();
+    let o_eigenvalues = matrix.clone().complex_eigenvalues();
+    let eigenvalues = DVector::from_vec(o_eigenvalues.iter().map(|e| e.re).collect::<Vec<_>>());
 
-    // (λ - λ_i) の積を 展開して係数を求める
     let mut coeffs = DVector::from_vec(vec![1.0]);
 
     for root in eigenvalues.iter() {
         let degree = coeffs.len();
         let mut new_coeffs = DVector::zeros(degree + 1);
         for i in 0..degree {
-            // x^i の係数に x を掛けると x^(i+1) の係数になる
             new_coeffs[i] += coeffs[i];
-            // x^i の係数に (-root) を掛けると、-root * x^i になる
             new_coeffs[i + 1] -= root * coeffs[i];
         }
         coeffs = new_coeffs;
     }
 
-    coeffs
+    Some(coeffs)
+}
+
+fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
+    assert_eq!(a.len(), b.len());
+    let mut result = DVector::zeros(a.len() * 2 - 1);
+    for i in 0..result.len() {
+        let a_start = if i < a.len() { 0 } else { i - a.len() + 1 };
+        let a_end = if i < a.len() { i } else { a.len() - 1 };
+        let b_start = if i < b.len() { b.len() - i - 1 } else { 0 };
+
+        for j in 0..=(a_end - a_start) {
+            result[i] += a[a_start + j] * complex_conjugation(&b[b_start + j]);
+        }
+    }
+    result
+}
+
+fn complex_conjugation(a: &Complex<f64>) -> Complex<f64> {
+    Complex::new(a.re, -a.im)
 }
 
 #[cfg(test)]
@@ -281,11 +296,59 @@ mod tests {
     #[test]
     fn test_characteristic_polynomial() {
         let roots = DMatrix::from_row_slice(2, 2, &[1.0, 0.0, 0.0, 1.0]);
-        let coeffs = characteristic_polynomial(&roots);
+        let coeffs = characteristic_polynomial(&roots).unwrap();
         assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, -2.0, 1.0]));
 
         let roots = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
-        let coeffs = characteristic_polynomial(&roots);
+        let coeffs = characteristic_polynomial(&roots).unwrap();
         assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, -5.0, -2.0]));
+
+        let roots = DMatrix::from_row_slice(2, 2, &[-3.0, -1.0, 1.0, 0.0]);
+        let coeffs = characteristic_polynomial(&roots).unwrap();
+        assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, 3.0, 1.0]));
+
+        let a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
+        let b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
+        let c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
+        assert_relative_eq!(
+            a.clone() - &b * &c,
+            DMatrix::from_row_slice(2, 2, &[-3.0, -3.0, 1.0, 0.0])
+        );
+
+        assert_relative_eq!(
+            characteristic_polynomial(&(a.clone() - (&b * &c))).unwrap(),
+            DVector::from_vec(vec![1.0, 3.0, 1.0])
+        );
+    }
+
+    #[test]
+    fn test_correlate() {
+        let a = DVector::from_vec(vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(2.0, 0.0),
+            Complex::new(3.0, 0.0),
+        ]);
+        let b = DVector::from_vec(vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.5, 0.0),
+        ]);
+        let real = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.re).collect::<Vec<_>>());
+        assert_relative_eq!(real, DVector::from_vec(vec![0.5, 2.0, 3.5, 3.0, 0.0]));
+
+        let a = DVector::from_vec(vec![
+            Complex::new(1.0, 1.0),
+            Complex::new(2.0, 0.0),
+            Complex::new(3.0, -1.0),
+        ]);
+        let b = DVector::from_vec(vec![
+            Complex::new(0.0, 0.0),
+            Complex::new(1.0, 0.0),
+            Complex::new(0.0, 0.5),
+        ]);
+        let real = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.re).collect::<Vec<_>>());
+        let imag = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.im).collect::<Vec<_>>());
+        assert_relative_eq!(real, DVector::from_vec(vec![0.5, 1.0, 1.5, 3.0, 0.0]));
+        assert_relative_eq!(imag, DVector::from_vec(vec![-0.5, 0.0, -1.5, -1.0, 0.0]));
     }
 }
