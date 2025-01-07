@@ -168,18 +168,22 @@ fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
     Some(coeffs)
 }
 
-fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
-    assert_eq!(a.len(), b.len());
-    let mut result = DVector::zeros(a.len() * 2 - 1);
-    for i in 0..result.len() {
-        let a_start = if i < a.len() { 0 } else { i - a.len() + 1 };
-        let a_end = if i < a.len() { i } else { a.len() - 1 };
-        let b_start = if i < b.len() { b.len() - i - 1 } else { 0 };
+fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
+    let reversed_b = DVector::from_iterator(b.len(), b.iter().rev().cloned());
 
-        for j in 0..=(a_end - a_start) {
-            result[i] += a[a_start + j] * complex_conjugation(&b[b_start + j]);
+    correlate(a, &reversed_b)
+}
+
+fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
+    let mut result = DVector::zeros(a.len() + b.len() - 1);
+
+    let a_padded = stack![DVector::zeros(b.len() - 1); a.clone(); DVector::zeros(b.len() - 1)];
+    for i in 0..result.len() {
+        for j in 0..b.len() {
+            result[i] += a_padded[i + j] * complex_conjugation(&b[j]);
         }
     }
+
     result
 }
 
@@ -350,5 +354,16 @@ mod tests {
         let imag = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.im).collect::<Vec<_>>());
         assert_relative_eq!(real, DVector::from_vec(vec![0.5, 1.0, 1.5, 3.0, 0.0]));
         assert_relative_eq!(imag, DVector::from_vec(vec![-0.5, 0.0, -1.5, -1.0, 0.0]));
+
+        let a = DVector::from_vec(vec![
+            Complex::new(1.0, 0.0),
+            Complex::new(2.0, 0.0),
+            Complex::new(3.0, 0.0),
+        ]);
+        let b = DVector::from_vec(vec![Complex::new(4.0, 0.0), Complex::new(5.0, 0.0)]);
+        let real = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.re).collect::<Vec<_>>());
+        let imag = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.im).collect::<Vec<_>>());
+        assert_relative_eq!(real, DVector::from_vec(vec![5.0, 14.0, 23.0, 12.0]));
+        assert_relative_eq!(imag, DVector::from_vec(vec![0.0, 0.0, 0.0, 0.0]));
     }
 }
