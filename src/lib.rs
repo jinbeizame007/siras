@@ -169,9 +169,15 @@ fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
 }
 
 fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
-    let reversed_b = DVector::from_iterator(b.len(), b.iter().rev().cloned());
+    if a.len() > b.len() {
+        let reversed_b = DVector::from_iterator(b.len(), b.iter().rev().cloned());
 
-    correlate(a, &reversed_b)
+        correlate(a, &reversed_b)
+    } else {
+        let reversed_a = DVector::from_iterator(a.len(), a.iter().rev().cloned());
+
+        correlate(b, &reversed_a)
+    }
 }
 
 fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
