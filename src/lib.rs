@@ -150,26 +150,40 @@ impl DiscreteStateSpace {
 fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
     assert_eq!(matrix.nrows(), matrix.ncols(), "Matrix must be square.");
 
-    let o_eigenvalues = matrix.clone().complex_eigenvalues();
-    let eigenvalues = DVector::from_vec(o_eigenvalues.iter().map(|e| e.re).collect::<Vec<_>>());
+    let complex_eigenvalues = matrix.clone().complex_eigenvalues();
+    let mut complex_coeffs = DVector::from_vec(vec![Complex::new(1.0, 0.0)]);
 
-    let mut coeffs = DVector::from_vec(vec![1.0]);
-
-    for root in eigenvalues.iter() {
-        let degree = coeffs.len();
-        let mut new_coeffs = DVector::zeros(degree + 1);
-        for i in 0..degree {
-            new_coeffs[i] += coeffs[i];
-            new_coeffs[i + 1] -= root * coeffs[i];
-        }
-        coeffs = new_coeffs;
+    for complex_eigenvalue in complex_eigenvalues.iter() {
+        complex_coeffs = convolve(
+            &complex_coeffs,
+            &DVector::from_vec(vec![Complex::new(1.0, 0.0), -complex_eigenvalue]),
+        );
     }
+    let coeffs = DVector::from_vec(complex_coeffs.iter().map(|e| e.re).collect::<Vec<_>>());
 
     Some(coeffs)
 }
 
 fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
-    if a.len() > b.len() {
+    let n = a.len();
+    let m = b.len();
+    let mut result = DVector::from_element(n + m - 1, Complex::new(0.0, 0.0));
+
+    for i in 0..(n + m - 1) {
+        let mut sum = Complex::new(0.0, 0.0);
+        for k in 0..=i {
+            if k < n && (i - k) < m {
+                sum += a[k] * b[i - k];
+            }
+        }
+        result[i] = sum;
+    }
+
+    result
+}
+
+fn _convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
+    if a.len() >= b.len() {
         let reversed_b = DVector::from_iterator(b.len(), b.iter().rev().cloned());
 
         correlate(a, &reversed_b)
@@ -327,7 +341,7 @@ mod tests {
 
         assert_relative_eq!(
             characteristic_polynomial(&(a.clone() - (&b * &c))).unwrap(),
-            DVector::from_vec(vec![1.0, 3.0, 1.0])
+            DVector::from_vec(vec![1.0, 3.0, 3.0])
         );
     }
 
