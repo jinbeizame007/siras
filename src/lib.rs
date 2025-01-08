@@ -283,8 +283,8 @@ mod tests {
 
     #[test]
     fn test_step_discrete_transfer_function() {
-        let num = DVector::from_vec(vec![1.3]);
-        let den = DVector::from_vec(vec![2.0, 1.5]);
+        let num = dvector![1.3];
+        let den = dvector![2.0, 1.5];
         let dt = 0.1;
         let mut discrete_tf = DiscreteTransferFunction::new(num, den, dt);
 
@@ -302,10 +302,10 @@ mod tests {
 
     #[test]
     fn test_step_discrete_state_space() {
-        let a = DMatrix::from_row_slice(2, 2, &[-2.0, -3.0, 1.0, 0.0]);
-        let b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
-        let c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
-        let d = DMatrix::from_row_slice(1, 1, &[2.0]);
+        let a = dmatrix![-2.0, -3.0; 1.0, 0.0];
+        let b = dmatrix![1.0; 0.0];
+        let c = dmatrix![1.0, 2.0];
+        let d = dmatrix![2.0];
         let dt = 0.1;
         let mut discrete_state_space = DiscreteStateSpace::new(a, b, c, d, dt);
 
@@ -323,16 +323,16 @@ mod tests {
 
     #[test]
     fn test_continuous_transfer_function_to_continuous_state_space() {
-        let num = DVector::from_vec(vec![1.0, 3.0, 3.0]);
-        let den = DVector::from_vec(vec![1.0, 2.0, 1.0]);
+        let num = dvector![1.0, 3.0, 3.0];
+        let den = dvector![1.0, 2.0, 1.0];
 
         let tf = ContinuousTransferFunction::new(num, den);
         let ss = ContinuousStateSpace::from(tf);
 
-        let expected_a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
-        let expected_b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
-        let expected_c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
-        let expected_d = DMatrix::from_row_slice(1, 1, &[1.0]);
+        let expected_a = dmatrix![-2.0, -1.0; 1.0, 0.0];
+        let expected_b = dmatrix![1.0; 0.0];
+        let expected_c = dmatrix![1.0, 2.0];
+        let expected_d = dmatrix![1.0];
 
         assert_relative_eq!(ss.a, expected_a);
         assert_relative_eq!(ss.b, expected_b);
@@ -342,16 +342,15 @@ mod tests {
 
     #[test]
     fn test_continuous_transfer_function_to_continuous_state_space_different_order() {
-        let num = DVector::from_vec(vec![1.0, 2.0, 3.0]);
-        let den = DVector::from_vec(vec![1.0, 2.0, 3.0, 4.0]);
+        let num = dvector![1.0, 2.0, 3.0];
+        let den = dvector![1.0, 2.0, 3.0, 4.0];
         let tf = ContinuousTransferFunction::new(num, den);
         let ss = ContinuousStateSpace::from(tf);
 
-        let expected_a =
-            DMatrix::from_row_slice(3, 3, &[-2.0, -3.0, -4.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
-        let expected_b = DMatrix::from_row_slice(3, 1, &[1.0, 0.0, 0.0]);
-        let expected_c = DMatrix::from_row_slice(1, 3, &[1.0, 2.0, 3.0]);
-        let expected_d = DMatrix::from_row_slice(1, 1, &[0.0]);
+        let expected_a = dmatrix![-2.0, -3.0, -4.0; 1.0, 0.0, 0.0; 0.0, 1.0, 0.0];
+        let expected_b = dmatrix![1.0; 0.0; 0.0];
+        let expected_c = dmatrix![1.0, 2.0, 3.0];
+        let expected_d = dmatrix![0.0];
 
         assert_relative_eq!(ss.a, expected_a);
         assert_relative_eq!(ss.b, expected_b);
@@ -361,20 +360,20 @@ mod tests {
 
     #[test]
     fn test_continuous_state_space_to_discrete_state_space() {
-        let ac = DMatrix::identity(2, 2);
-        let bc = DMatrix::from_row_slice(2, 1, &[0.5, 0.5]);
-        let cc = DMatrix::from_row_slice(3, 2, &[0.75, 1.0, 1.0, 1.0, 1.0, 0.25]);
-        let dc = DMatrix::from_row_slice(3, 1, &[0.0, 0.0, -0.33]);
+        let ac = dmatrix![1.0, 0.0; 0.0, 1.0];
+        let bc = dmatrix![0.5; 0.5];
+        let cc = dmatrix![0.75, 1.0; 1.0, 1.0; 1.0, 0.25];
+        let dc = dmatrix![0.0; 0.0; -0.33];
         let continuous_state_space = ContinuousStateSpace::new(ac, bc, cc, dc);
 
         let dt = 0.5;
         let alpha = 1.0 / 3.0;
         let discrete_state_space = continuous_state_space.to_discrete(dt, alpha);
 
-        let expected_a = 1.6 * DMatrix::identity(2, 2);
-        let expected_b = DMatrix::from_row_slice(2, 1, &[0.3, 0.3]);
-        let expected_c = DMatrix::from_row_slice(3, 2, &[0.9, 1.2, 1.2, 1.2, 1.2, 0.3]);
-        let expected_d = DMatrix::from_row_slice(3, 1, &[0.175, 0.2, -0.205]);
+        let expected_a = dmatrix![1.6, 0.0; 0.0, 1.6];
+        let expected_b = dmatrix![0.3; 0.3];
+        let expected_c = dmatrix![0.9, 1.2; 1.2, 1.2; 1.2, 0.3];
+        let expected_d = dmatrix![0.175; 0.2; -0.205];
 
         assert_relative_eq!(discrete_state_space.a, expected_a);
         assert_relative_eq!(discrete_state_space.b, expected_b);
@@ -396,16 +395,16 @@ mod tests {
 
     #[test]
     fn test_discrete_state_space_to_discrete_transfer_function() {
-        let a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
-        let b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
-        let c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
-        let d = DMatrix::from_row_slice(1, 1, &[1.0]);
+        let a = dmatrix![-2.0, -1.0; 1.0, 0.0];
+        let b = dmatrix![1.0; 0.0];
+        let c = dmatrix![1.0, 2.0];
+        let d = dmatrix![1.0];
         let dt = 0.1;
         let discrete_state_space = DiscreteStateSpace::new(a, b, c, d, dt);
         let discrete_transfer_function = DiscreteTransferFunction::from(discrete_state_space);
 
-        let expected_num = DVector::from_vec(vec![1.0, 3.0, 3.0]);
-        let expected_den = DVector::from_vec(vec![1.0, 2.0, 1.0]);
+        let expected_num = dvector![1.0, 3.0, 3.0];
+        let expected_den = dvector![1.0, 2.0, 1.0];
 
         assert_relative_eq!(
             discrete_transfer_function.num,
@@ -421,71 +420,68 @@ mod tests {
 
     #[test]
     fn test_characteristic_polynomial() {
-        let roots = DMatrix::from_row_slice(2, 2, &[1.0, 0.0, 0.0, 1.0]);
+        let roots = dmatrix![1.0, 0.0; 0.0, 1.0];
         let coeffs = characteristic_polynomial(&roots).unwrap();
-        assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, -2.0, 1.0]));
+        assert_relative_eq!(coeffs, dvector![1.0, -2.0, 1.0]);
 
-        let roots = DMatrix::from_row_slice(2, 2, &[1.0, 2.0, 3.0, 4.0]);
+        let roots = dmatrix![1.0, 2.0; 3.0, 4.0];
         let coeffs = characteristic_polynomial(&roots).unwrap();
-        assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, -5.0, -2.0]));
+        assert_relative_eq!(coeffs, dvector![1.0, -5.0, -2.0]);
 
-        let roots = DMatrix::from_row_slice(2, 2, &[-3.0, -1.0, 1.0, 0.0]);
+        let roots = dmatrix![-3.0, -1.0; 1.0, 0.0];
         let coeffs = characteristic_polynomial(&roots).unwrap();
-        assert_relative_eq!(coeffs, DVector::from_vec(vec![1.0, 3.0, 1.0]));
+        assert_relative_eq!(coeffs, dvector![1.0, 3.0, 1.0]);
 
-        let a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
-        let b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
-        let c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
-        assert_relative_eq!(
-            a.clone() - &b * &c,
-            DMatrix::from_row_slice(2, 2, &[-3.0, -3.0, 1.0, 0.0])
-        );
+        let a = dmatrix![-2.0, -1.0; 1.0, 0.0];
+        let b = dmatrix![1.0; 0.0];
+        let c = dmatrix![1.0, 2.0];
+        assert_relative_eq!(a.clone() - &b * &c, dmatrix![-3.0, -3.0; 1.0, 0.0]);
 
         assert_relative_eq!(
             characteristic_polynomial(&(a.clone() - (&b * &c))).unwrap(),
-            DVector::from_vec(vec![1.0, 3.0, 3.0])
+            dvector![1.0, 3.0, 3.0]
         );
     }
 
     #[test]
     fn test_correlate() {
-        let a = DVector::from_vec(vec![
+        let a = dvector![
             Complex::new(1.0, 0.0),
             Complex::new(2.0, 0.0),
             Complex::new(3.0, 0.0),
-        ]);
-        let b = DVector::from_vec(vec![
+        ];
+        let b = dvector![
             Complex::new(0.0, 0.0),
             Complex::new(1.0, 0.0),
             Complex::new(0.5, 0.0),
-        ]);
+        ];
         let real = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.re).collect::<Vec<_>>());
-        assert_relative_eq!(real, DVector::from_vec(vec![0.5, 2.0, 3.5, 3.0, 0.0]));
+        assert_relative_eq!(real, dvector![0.5, 2.0, 3.5, 3.0, 0.0]);
 
-        let a = DVector::from_vec(vec![
+        let a = dvector![
             Complex::new(1.0, 1.0),
             Complex::new(2.0, 0.0),
             Complex::new(3.0, -1.0),
-        ]);
-        let b = DVector::from_vec(vec![
+        ];
+        let b = dvector![
             Complex::new(0.0, 0.0),
             Complex::new(1.0, 0.0),
             Complex::new(0.0, 0.5),
-        ]);
+        ];
         let real = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.re).collect::<Vec<_>>());
         let imag = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.im).collect::<Vec<_>>());
-        assert_relative_eq!(real, DVector::from_vec(vec![0.5, 1.0, 1.5, 3.0, 0.0]));
-        assert_relative_eq!(imag, DVector::from_vec(vec![-0.5, 0.0, -1.5, -1.0, 0.0]));
+        assert_relative_eq!(real, dvector![0.5, 1.0, 1.5, 3.0, 0.0]);
+        assert_relative_eq!(imag, dvector![-0.5, 0.0, -1.5, -1.0, 0.0]);
 
-        let a = DVector::from_vec(vec![
+        let a = dvector![
             Complex::new(1.0, 0.0),
             Complex::new(2.0, 0.0),
             Complex::new(3.0, 0.0),
-        ]);
-        let b = DVector::from_vec(vec![Complex::new(4.0, 0.0), Complex::new(5.0, 0.0)]);
+        ];
+        let b = dvector![Complex::new(4.0, 0.0), Complex::new(5.0, 0.0)];
         let real = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.re).collect::<Vec<_>>());
         let imag = DVector::from_vec(correlate(&a, &b).iter().map(|e| e.im).collect::<Vec<_>>());
-        assert_relative_eq!(real, DVector::from_vec(vec![5.0, 14.0, 23.0, 12.0]));
-        assert_relative_eq!(imag, DVector::from_vec(vec![0.0, 0.0, 0.0, 0.0]));
+        assert_relative_eq!(real, dvector![5.0, 14.0, 23.0, 12.0]);
+        assert_relative_eq!(imag, dvector![0.0, 0.0, 0.0, 0.0]);
     }
 }
