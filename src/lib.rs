@@ -212,6 +212,21 @@ impl From<DiscreteTransferFunction> for DiscreteStateSpace {
     }
 }
 
+fn expm(matrix: &DMatrix<f64>) -> DMatrix<f64> {
+    let n = matrix.nrows();
+    let mut result = DMatrix::identity(n, n);
+    let mut power = DMatrix::identity(n, n);
+    let mut factorial = 1.0;
+
+    for i in 1..=20 {
+        power = power * matrix;
+        factorial *= i as f64;
+        result += &power / factorial;
+    }
+
+    result
+}
+
 fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
     assert_eq!(matrix.nrows(), matrix.ncols(), "Matrix must be square.");
 
