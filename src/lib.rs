@@ -11,6 +11,25 @@ impl ContinuousTransferFunction {
     }
 }
 
+impl From<ContinuousStateSpace> for ContinuousTransferFunction {
+    fn from(state_space: ContinuousStateSpace) -> Self {
+        let a = state_space.a.clone();
+        let b = state_space.b.clone();
+        let c = state_space.c.clone();
+        let d = state_space.d.clone();
+
+        let o_den = characteristic_polynomial(&a);
+        let den = match o_den {
+            Some(den) => den,
+            None => DVector::from_vec(vec![1.0]),
+        };
+        let num =
+            characteristic_polynomial(&(a - (&b * &c))).unwrap() + den.clone() * d.add_scalar(-1.0);
+
+        Self::new(num, den)
+    }
+}
+
 pub struct DiscreteTransferFunction {
     num: DVector<f64>,
     den: DVector<f64>,
@@ -70,14 +89,8 @@ impl From<DiscreteStateSpace> for DiscreteTransferFunction {
             Some(den) => den,
             None => DVector::from_vec(vec![1.0]),
         };
-        let _num = (den.clone() * d.add_scalar(-1.0)).clone();
-        println!("{:?}", _num);
-        println!("{:?}", den);
-        println!(
-            "{:?}",
-            characteristic_polynomial(&(a.clone() - (&b * &c))).unwrap()
-        );
-        let num = characteristic_polynomial(&(a - (&b * &c))).unwrap() + _num;
+        let num =
+            characteristic_polynomial(&(a - (&b * &c))).unwrap() + den.clone() * d.add_scalar(-1.0);
 
         Self::new(num, den, dt)
     }
@@ -341,6 +354,18 @@ mod tests {
         assert_relative_eq!(discrete_state_space.b, expected_b);
         assert_relative_eq!(discrete_state_space.c, expected_c);
         assert_relative_eq!(discrete_state_space.d, expected_d);
+    }
+
+    #[test]
+    fn test_continuous_state_space_to_continuous_transfer_function() {
+        let num = DVector::from_vec(vec![1.0, 3.0, 5.0]);
+        let den = DVector::from_vec(vec![1.0, 2.0, 3.0]);
+        let continuous_transfer_function = ContinuousTransferFunction::from(
+            ContinuousStateSpace::from(ContinuousTransferFunction::new(num.clone(), den.clone())),
+        );
+
+        assert_relative_eq!(continuous_transfer_function.num, num);
+        assert_relative_eq!(continuous_transfer_function.den, den);
     }
 
     #[test]
