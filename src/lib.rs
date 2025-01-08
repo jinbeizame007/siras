@@ -186,6 +186,32 @@ impl DiscreteStateSpace {
     }
 }
 
+impl From<DiscreteTransferFunction> for DiscreteStateSpace {
+    fn from(tf: DiscreteTransferFunction) -> Self {
+        assert!(
+            tf.den.len() >= tf.num.len(),
+            "The order of the denominator must be greater than or equal to the order of the numerator."
+        );
+
+        let n = tf.den.len() - 1; // Order
+
+        // Normalize the numerator and denominator
+        let num = stack![DVector::zeros(tf.den.len() - tf.num.len()); tf.num.clone()] / tf.den[0];
+        let den = tf.den.clone() / tf.den[0];
+
+        let a = stack![
+            -den.rows(1, n).transpose();
+            DMatrix::identity(n - 1, n)
+        ];
+        let b = DMatrix::identity(n, 1);
+        let c = DMatrix::from_row_slice(1, n, num.rows(1, n).as_slice())
+            - num[0] * DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
+        let d = DMatrix::from_row_slice(1, 1, &[num[0]]);
+
+        DiscreteStateSpace::new(a, b, c, d, tf.dt)
+    }
+}
+
 fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
     assert_eq!(matrix.nrows(), matrix.ncols(), "Matrix must be square.");
 
