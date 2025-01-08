@@ -459,6 +459,17 @@ mod tests {
     }
 
     #[test]
+    fn test_expm() {
+        let x = dmatrix![1.0, 1.0; -1.0, 1.0];
+        let result = expm(&a);
+        assert_relative_eq!(
+            result,
+            dmatrix![1.46869394, 2.28735529; -2.28735529,  1.46869394],
+            epsilon = 1e-8
+        );
+    }
+
+    #[test]
     fn test_correlate() {
         let a = dvector![
             Complex::new(1.0, 0.0),
