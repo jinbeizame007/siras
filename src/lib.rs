@@ -1,4 +1,4 @@
-use nalgebra::{stack, Complex, DMatrix, DVector};
+use nalgebra::{dmatrix, dvector, stack, Complex, DMatrix, DVector};
 
 pub struct ContinuousTransferFunction {
     num: DVector<f64>,
@@ -54,6 +54,32 @@ impl DiscreteTransferFunction {
         self.outputs[0] = output;
 
         output
+    }
+}
+
+impl From<DiscreteStateSpace> for DiscreteTransferFunction {
+    fn from(state_space: DiscreteStateSpace) -> Self {
+        let a = state_space.a.clone();
+        let b = state_space.b.clone();
+        let c = state_space.c.clone();
+        let d = state_space.d.clone();
+        let dt = state_space.dt;
+
+        let o_den = characteristic_polynomial(&a);
+        let den = match o_den {
+            Some(den) => den,
+            None => DVector::from_vec(vec![1.0]),
+        };
+        let _num = (den.clone() * d.add_scalar(-1.0)).clone();
+        println!("{:?}", _num);
+        println!("{:?}", den);
+        println!(
+            "{:?}",
+            characteristic_polynomial(&(a.clone() - (&b * &c))).unwrap()
+        );
+        let num = characteristic_polynomial(&(a - (&b * &c))).unwrap() + _num;
+
+        Self::new(num, den, dt)
     }
 }
 
@@ -315,6 +341,31 @@ mod tests {
         assert_relative_eq!(discrete_state_space.b, expected_b);
         assert_relative_eq!(discrete_state_space.c, expected_c);
         assert_relative_eq!(discrete_state_space.d, expected_d);
+    }
+
+    #[test]
+    fn test_discrete_state_space_to_discrete_transfer_function() {
+        let a = DMatrix::from_row_slice(2, 2, &[-2.0, -1.0, 1.0, 0.0]);
+        let b = DMatrix::from_row_slice(2, 1, &[1.0, 0.0]);
+        let c = DMatrix::from_row_slice(1, 2, &[1.0, 2.0]);
+        let d = DMatrix::from_row_slice(1, 1, &[1.0]);
+        let dt = 0.1;
+        let discrete_state_space = DiscreteStateSpace::new(a, b, c, d, dt);
+        let discrete_transfer_function = DiscreteTransferFunction::from(discrete_state_space);
+
+        let expected_num = DVector::from_vec(vec![1.0, 3.0, 3.0]);
+        let expected_den = DVector::from_vec(vec![1.0, 2.0, 1.0]);
+
+        assert_relative_eq!(
+            discrete_transfer_function.num,
+            expected_num,
+            epsilon = 1e-15
+        );
+        assert_relative_eq!(
+            discrete_transfer_function.den,
+            expected_den,
+            epsilon = 1e-15
+        );
     }
 
     #[test]
