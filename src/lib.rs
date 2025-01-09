@@ -1,6 +1,6 @@
 use nalgebra::{dmatrix, dvector, stack, Complex, DMatrix, DVector};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ContinuousTransferFunction {
     num: DVector<f64>,
     den: DVector<f64>,
@@ -42,6 +42,7 @@ impl From<ContinuousStateSpace> for ContinuousTransferFunction {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct DiscreteTransferFunction {
     num: DVector<f64>,
     den: DVector<f64>,
@@ -108,6 +109,7 @@ impl From<DiscreteStateSpace> for DiscreteTransferFunction {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct ContinuousStateSpace {
     pub a: DMatrix<f64>,
     pub b: DMatrix<f64>,
@@ -216,6 +218,7 @@ impl From<ContinuousTransferFunction> for ContinuousStateSpace {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct DiscreteStateSpace {
     pub a: DMatrix<f64>,
     pub b: DMatrix<f64>,
