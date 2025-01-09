@@ -324,18 +324,6 @@ fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Com
     result
 }
 
-fn _convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
-    if a.len() >= b.len() {
-        let reversed_b = DVector::from_iterator(b.len(), b.iter().rev().cloned());
-
-        correlate(a, &reversed_b)
-    } else {
-        let reversed_a = DVector::from_iterator(a.len(), a.iter().rev().cloned());
-
-        correlate(b, &reversed_a)
-    }
-}
-
 fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
     let mut result = DVector::zeros(a.len() + b.len() - 1);
 
