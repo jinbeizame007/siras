@@ -101,11 +101,57 @@ pub struct ContinuousStateSpace {
     pub b: DMatrix<f64>,
     pub c: DMatrix<f64>,
     pub d: DMatrix<f64>,
+    pub x: DVector<f64>,
 }
 
 impl ContinuousStateSpace {
     pub fn new(a: DMatrix<f64>, b: DMatrix<f64>, c: DMatrix<f64>, d: DMatrix<f64>) -> Self {
-        Self { a, b, c, d }
+        let x = DVector::zeros(a.nrows());
+        Self { a, b, c, d, x }
+    }
+
+    pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        let n_states = self.a.nrows();
+        let n_inputs = self.b.ncols();
+
+        let mut xout = DMatrix::<f64>::zeros(t.len(), n_states);
+        // let mut yout = Vec::<f64>::with_capacity(t.len());
+
+        xout.set_row(0, &self.x.transpose());
+
+        let dt = t[1] - t[0];
+
+        let m = stack![
+            stack![self.a.clone() * dt, self.b.clone() * dt, DMatrix::zeros(n_states, n_inputs)];
+            stack![DMatrix::zeros(n_inputs, n_states + n_inputs), DMatrix::identity(n_inputs, n_inputs)];
+            DMatrix::zeros(n_inputs, n_states + 2 * n_inputs);
+        ];
+
+        let exp_mt = expm(&m.transpose());
+        let ad = exp_mt.view((0, 0), (n_states, n_states));
+        let bd1 = exp_mt.view(
+            (n_states + n_inputs, 0),
+            (m.nrows() - n_states - n_inputs, n_states),
+        );
+        let bd0 = exp_mt.view((n_states, 0), (n_inputs, n_states)) - &bd1;
+
+        for i in 1..t.len() {
+            xout.set_row(
+                i,
+                &(xout.row(i - 1) * &ad + inputs[i - 1] * &bd0 + inputs[i] * &bd1),
+            );
+            // yout[i - 1] = xout[i - 1] * c.transpose() + inputs[i - 1] * d.transpose();
+        }
+
+        DVector::from_column_slice((xout.clone() * self.c.transpose()).column(0).as_slice())
+        // + inputs * self.d.transpose()
+
+        // let exp_mt = expm(&m.transpose());
+        // let ad = exp_mt.rows(0, n_states).cols(0, n_states);
+        // let bd = exp_mt.rows(n_states, 1).cols(n_states, 1);
+        // let x = exp_mt * self.x + self.b * input;
+        // self.x = x;
+        // self.c * self.x
     }
 
     pub fn to_discrete(&self, dt: f64, alpha: f64) -> DiscreteStateSpace {
@@ -153,7 +199,8 @@ impl From<ContinuousTransferFunction> for ContinuousStateSpace {
         let c = DMatrix::from_row_slice(1, n, num.rows(1, n).as_slice())
             - num[0] * DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
         let d = DMatrix::from_row_slice(1, 1, &[num[0]]);
-        ContinuousStateSpace { a, b, c, d }
+
+        ContinuousStateSpace::new(a, b, c, d)
     }
 }
 
@@ -316,6 +363,22 @@ mod tests {
     }
 
     #[test]
+    fn test_step_continuous_state_space() {
+        let a = dmatrix![-1.0, 0.0; 0.0, -2.0];
+        let b = dmatrix![1.0; 0.0];
+        let c = dmatrix![1.0, 0.0];
+        let d = dmatrix![1.0];
+        let x = dvector![1.0, 1.0];
+        let mut continuous_state_space = ContinuousStateSpace { a, b, c, d, x };
+
+        let inputs = DVector::zeros(5);
+        let t = dvector![0.0, 0.5, 1.0, 1.5, 2.0];
+        let outputs = continuous_state_space.simulate(inputs, t);
+
+        assert_relative_eq!(outputs[4], f64::exp(-2.0));
+    }
+
+    #[test]
     fn test_step_discrete_state_space() {
         let a = dmatrix![-2.0, -3.0; 1.0, 0.0];
         let b = dmatrix![1.0; 0.0];
@@ -461,7 +524,7 @@ mod tests {
     #[test]
     fn test_expm() {
         let x = dmatrix![1.0, 1.0; -1.0, 1.0];
-        let result = expm(&a);
+        let result = expm(&x);
         assert_relative_eq!(
             result,
             dmatrix![1.46869394, 2.28735529; -2.28735529,  1.46869394],
