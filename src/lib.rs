@@ -1,13 +1,25 @@
 use nalgebra::{dmatrix, dvector, stack, Complex, DMatrix, DVector};
 
+#[derive(Clone)]
 pub struct ContinuousTransferFunction {
     num: DVector<f64>,
     den: DVector<f64>,
+    x: DVector<f64>,
 }
 
 impl ContinuousTransferFunction {
     pub fn new(num: DVector<f64>, den: DVector<f64>) -> Self {
-        Self { num, den }
+        let x = DVector::zeros(num.len());
+        Self { num, den, x }
+    }
+
+    pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        let mut state_space = ContinuousStateSpace::from(self.clone());
+
+        let result = state_space.simulate(inputs, t);
+        self.x = state_space.x.clone();
+
+        result
     }
 }
 
