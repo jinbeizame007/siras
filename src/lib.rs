@@ -147,12 +147,12 @@ impl ContinuousStateSpace {
             (n_states + n_inputs, 0),
             (m.nrows() - n_states - n_inputs, n_states),
         );
-        let bd0 = exp_mt.view((n_states, 0), (n_inputs, n_states)) - &bd1;
+        let bd0 = exp_mt.view((n_states, 0), (n_inputs, n_states)) - bd1;
 
         for i in 1..t.len() {
             xout.set_row(
                 i,
-                &(xout.row(i - 1) * &ad + inputs[i - 1] * &bd0 + inputs[i] * &bd1),
+                &(xout.row(i - 1) * ad + inputs[i - 1] * &bd0 + inputs[i] * bd1),
             );
             // yout[i - 1] = xout[i - 1] * c.transpose() + inputs[i - 1] * d.transpose();
         }
@@ -211,7 +211,7 @@ impl From<ContinuousTransferFunction> for ContinuousStateSpace {
         ];
         let b = DMatrix::identity(n, 1);
         let c = DMatrix::from_row_slice(1, n, num.rows(1, n).as_slice())
-            - num[0] * DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
+            - num[0] * DMatrix::from_row_slice(1, n, den.rows(1, n).as_slice());
         let d = DMatrix::from_row_slice(1, 1, &[num[0]]);
 
         ContinuousStateSpace::new(a, b, c, d)
@@ -267,7 +267,7 @@ impl From<DiscreteTransferFunction> for DiscreteStateSpace {
         ];
         let b = DMatrix::identity(n, 1);
         let c = DMatrix::from_row_slice(1, n, num.rows(1, n).as_slice())
-            - num[0] * DMatrix::from_row_slice(1, n, &den.rows(1, n).as_slice());
+            - num[0] * DMatrix::from_row_slice(1, n, den.rows(1, n).as_slice());
         let d = DMatrix::from_row_slice(1, 1, &[num[0]]);
 
         DiscreteStateSpace::new(a, b, c, d, tf.dt)
@@ -281,7 +281,7 @@ fn expm(matrix: &DMatrix<f64>) -> DMatrix<f64> {
     let mut factorial = 1.0;
 
     for i in 1..=20 {
-        power = power * matrix;
+        power *= matrix;
         factorial *= i as f64;
         result += &power / factorial;
     }
@@ -356,12 +356,12 @@ mod tests {
         let dt = 0.1;
         let mut discrete_tf = DiscreteTransferFunction::new(num, den, dt);
 
-        let inputs = vec![0.2, 0.4, 0.6, 0.8, 1.0];
+        let inputs = [0.2, 0.4, 0.6, 0.8, 1.0];
         let outputs = inputs
             .iter()
             .map(|input| discrete_tf.step(*input))
             .collect::<Vec<_>>();
-        let expected_outputs = vec![0.13, 0.1625, 0.268125, 0.31890625, 0.4108203125];
+        let expected_outputs = [0.13, 0.1625, 0.268125, 0.31890625, 0.4108203125];
 
         for (output, expected_output) in outputs.iter().zip(expected_outputs.iter()) {
             assert_relative_eq!(output, expected_output);
@@ -393,12 +393,12 @@ mod tests {
         let dt = 0.1;
         let mut discrete_state_space = DiscreteStateSpace::new(a, b, c, d, dt);
 
-        let inputs = vec![0.2, 0.4, 0.6, 0.8, 1.0];
+        let inputs = [0.2, 0.4, 0.6, 0.8, 1.0];
         let outputs = inputs
             .iter()
             .map(|input| discrete_state_space.step(*input))
             .collect::<Vec<_>>();
-        let expected_outputs = vec![0.4, 1.0, 1.6, 1.6, 2.8];
+        let expected_outputs = [0.4, 1.0, 1.6, 1.6, 2.8];
 
         for (output, expected_output) in outputs.iter().zip(expected_outputs.iter()) {
             assert_relative_eq!(output, expected_output);
