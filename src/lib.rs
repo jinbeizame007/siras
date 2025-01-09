@@ -1,4 +1,4 @@
-use nalgebra::{dmatrix, dvector, stack, Complex, DMatrix, DVector};
+use nalgebra::{stack, Complex, DMatrix, DVector};
 
 #[derive(Clone, Debug)]
 pub struct ContinuousTransferFunction {
@@ -324,6 +324,7 @@ fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Com
     result
 }
 
+#[allow(dead_code)]
 fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
     let mut result = DVector::zeros(a.len() + b.len() - 1);
 
@@ -337,6 +338,7 @@ fn correlate(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Co
     result
 }
 
+#[allow(dead_code)]
 fn complex_conjugation(a: &Complex<f64>) -> Complex<f64> {
     Complex::new(a.re, -a.im)
 }
@@ -345,6 +347,7 @@ fn complex_conjugation(a: &Complex<f64>) -> Complex<f64> {
 mod tests {
     use super::*;
     use approx::assert_relative_eq;
+    use nalgebra::{dmatrix, dvector};
 
     #[test]
     fn test_step_discrete_transfer_function() {
