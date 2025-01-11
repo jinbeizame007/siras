@@ -47,6 +47,31 @@ fn reverse_bessel_polynomial(order: usize) -> DVector<f64> {
     coeffs
 }
 
+pub fn chebyshev1(
+    order: usize,
+    cutoff_frequency: f64,
+    ripple_db: f64,
+) -> ContinuousTransferFunction {
+    let ripple = f64::sqrt(10.0_f64.powf(ripple_db / 10.0) - 1.0);
+    let num =
+        dvector![cutoff_frequency.powf(order as f64) / (2.0_f64.powf(order as f64 - 1.0) * ripple)];
+
+    let mut poles: DVector<Complex<f64>> = DVector::zeros(order);
+    for k in 1..=order {
+        let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
+        poles[k - 1] = Complex::new(
+            -1.0 * (cutoff_frequency
+                * ((1.0 / order as f64) * (1.0 / ripple).asinh()).sinh()
+                * theta.sin())
+            .abs(),
+            cutoff_frequency * ((1.0 / order as f64) * (1.0 / ripple).asinh()).cosh() * theta.cos(),
+        );
+    }
+    let den = DVector::from_vec(poly(poles).iter().map(|e| e.re).collect::<Vec<_>>());
+
+    ContinuousTransferFunction::new(num, den)
+}
+
 pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
     if order == 0 {
         return dvector![1.0];
@@ -159,6 +184,49 @@ mod tests {
 
         let poly = chebyshev1_polynomial(4);
         assert_eq!(poly, dvector![8.0, 0.0, -8.0, 0.0, 1.0]);
+    }
+
+    #[test]
+    fn test_chebyshev1() {
+        let tf = chebyshev1(1, 100.0, 1.0);
+        assert_relative_eq!(tf.num, dvector![196.52267283602717]);
+        assert_relative_eq!(tf.den, dvector![1.0, 196.52267283602717]);
+
+        let tf = chebyshev1(2, 100.0, 1.0);
+        assert_relative_eq!(tf.num, dvector![9826.133641801356]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![1.0, 109.77343285639276, 11025.103280538484]
+        );
+
+        let tf = chebyshev1(3, 100.0, 1.0);
+        assert_relative_eq!(tf.num, dvector![491306.6820900678]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![1.0, 98.8341209884761, 12384.091735782364, 491306.6820900678],
+            epsilon = 1e-9
+        );
+
+        let tf = chebyshev1(1, 100.0, 3.0);
+        assert_relative_eq!(tf.num, dvector![100.23772930076005]);
+        assert_relative_eq!(tf.den, dvector![1.0, 100.23772930076005]);
+
+        let tf = chebyshev1(2, 100.0, 3.0);
+        assert_relative_eq!(tf.num, dvector![5011.886465038001], epsilon = 1e-11);
+        assert_relative_eq!(tf.den, dvector![1.0, 64.48996513028668, 7079.477801252795]);
+
+        let tf = chebyshev1(3, 100.0, 3.0);
+        assert_relative_eq!(tf.num, dvector![250594.32325190006], epsilon = 1e-9);
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                59.72404165413484,
+                9283.480575752415,
+                250594.32325190003
+            ],
+            epsilon = 1e-9
+        );
     }
 
     #[test]
