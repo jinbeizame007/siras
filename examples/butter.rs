@@ -23,7 +23,7 @@ fn plot(
         .margin(20)
         .x_label_area_size(60)
         .y_label_area_size(70)
-        .build_cartesian_2d(x.min()..x.max(), y.min()..y.max())?;
+        .build_cartesian_2d(x.min()..x.max(), -2.0..2.0)?;
 
     let label_font_x = ("sans-serif", 25, FontStyle::Normal).into_font();
     let label_font_y = ("sans-serif", 25, FontStyle::Normal).into_font();
@@ -52,7 +52,7 @@ fn main() {
     let f0 = 10.0;
     let f1 = 100.0;
     let sample_frequency = 32000;
-    let cutoff_frequency = 50.0;
+    let cutoff_frequency = 90.0;
     let order = 4;
     let t = DVector::from_iterator(
         sample_frequency + 1,
