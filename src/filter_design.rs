@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 
-use nalgebra::{dvector, Complex, DVector};
+use nalgebra::{dvector, stack, Complex, DVector};
 
 use crate::transfer_function::{convolve, ContinuousTransferFunction};
 
@@ -45,6 +45,24 @@ fn reverse_bessel_polynomial(order: usize) -> DVector<f64> {
     }
 
     coeffs
+}
+
+pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
+    if order == 0 {
+        return dvector![1.0];
+    } else if order == 1 {
+        return dvector![1.0, 0.0];
+    } else {
+        let mut polynomials: Vec<DVector<f64>> = vec![dvector![1.0], dvector![1.0, 0.0]];
+        for k in 2..=order {
+            polynomials.push(
+                stack![2.0 * polynomials[k - 1].clone(); dvector![0.0]]
+                    - stack![dvector![0.0, 0.0]; polynomials[k - 2].clone()],
+            );
+        }
+
+        return polynomials[order].clone();
+    }
 }
 
 pub fn poly(vec: DVector<Complex<f64>>) -> DVector<Complex<f64>> {
@@ -123,6 +141,24 @@ mod tests {
         let tf = bessel(5, 1.0);
         assert_eq!(tf.num, dvector![945.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 15.0, 105.0, 420.0, 945.0, 945.0]);
+    }
+
+    #[test]
+    fn test_chebyshev1_polynomial() {
+        let poly = chebyshev1_polynomial(0);
+        assert_eq!(poly, dvector![1.0]);
+
+        let poly = chebyshev1_polynomial(1);
+        assert_eq!(poly, dvector![1.0, 0.0]);
+
+        let poly = chebyshev1_polynomial(2);
+        assert_eq!(poly, dvector![2.0, 0.0, -1.0]);
+
+        let poly = chebyshev1_polynomial(3);
+        assert_eq!(poly, dvector![4.0, 0.0, -3.0, 0.0]);
+
+        let poly = chebyshev1_polynomial(4);
+        assert_eq!(poly, dvector![8.0, 0.0, -8.0, 0.0, 1.0]);
     }
 
     #[test]
