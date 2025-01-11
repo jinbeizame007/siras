@@ -21,6 +21,32 @@ pub fn butter(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction
     ContinuousTransferFunction::new(num, den)
 }
 
+pub fn bessel(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction {
+    let den_bessel = reverse_bessel_polynomial(order);
+    let den_cutoff = DVector::from_vec(
+        (0..=order)
+            .rev()
+            .map(|k| cutoff_frequency.powf(k as f64))
+            .collect::<Vec<_>>(),
+    );
+    let den = den_bessel.component_mul(&den_cutoff);
+    let num = dvector![den_bessel[den_bessel.len() - 1]];
+
+    ContinuousTransferFunction::new(num, den)
+}
+
+fn reverse_bessel_polynomial(order: usize) -> DVector<f64> {
+    let mut coeffs = DVector::zeros(order + 1);
+    coeffs[0] = 1.0;
+    for k in 0..order {
+        coeffs[order - k] = (factorial(2 * order - k)
+            / (usize::pow(2, (order - k) as u32) * factorial(k) * factorial(order - k)))
+            as f64;
+    }
+
+    coeffs
+}
+
 pub fn poly(vec: DVector<Complex<f64>>) -> DVector<Complex<f64>> {
     let mut a = DVector::from_vec(vec![Complex::new(1.0, 0.0)]);
     for x in vec.iter() {
@@ -28,6 +54,14 @@ pub fn poly(vec: DVector<Complex<f64>>) -> DVector<Complex<f64>> {
     }
 
     a
+}
+
+pub fn factorial(n: usize) -> usize {
+    if n == 0 {
+        1
+    } else {
+        n * factorial(n - 1)
+    }
 }
 
 #[cfg(test)]
