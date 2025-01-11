@@ -26,7 +26,7 @@ pub fn bessel(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction
     let den_cutoff = DVector::from_vec(
         (0..=order)
             .rev()
-            .map(|k| cutoff_frequency.powf(k as f64))
+            .map(|k| (1.0 / cutoff_frequency).powf(k as f64))
             .collect::<Vec<_>>(),
     );
     let den = den_bessel.component_mul(&den_cutoff);
