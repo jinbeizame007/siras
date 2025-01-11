@@ -2,8 +2,8 @@ use nalgebra::{stack, Complex, DMatrix, DVector};
 
 #[derive(Clone, Debug)]
 pub struct ContinuousTransferFunction {
-    num: DVector<f64>,
-    den: DVector<f64>,
+    pub num: DVector<f64>,
+    pub den: DVector<f64>,
     x: DVector<f64>,
 }
 
