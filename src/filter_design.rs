@@ -103,6 +103,29 @@ mod tests {
     }
 
     #[test]
+    fn test_bessel() {
+        let tf = bessel(1, 1.0);
+        assert_eq!(tf.num, dvector![1.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
+
+        let tf = bessel(2, 1.0);
+        assert_eq!(tf.num, dvector![3.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 3.0, 3.0]);
+
+        let tf = bessel(3, 1.0);
+        assert_eq!(tf.num, dvector![15.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 6.0, 15.0, 15.0]);
+
+        let tf = bessel(4, 1.0);
+        assert_eq!(tf.num, dvector![105.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 10.0, 45.0, 105.0, 105.0]);
+
+        let tf = bessel(5, 1.0);
+        assert_eq!(tf.num, dvector![945.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 15.0, 105.0, 420.0, 945.0, 945.0]);
+    }
+
+    #[test]
     fn test_poly() {
         let vec = dvector![
             Complex::new(1.0, 0.0),
