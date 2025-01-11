@@ -64,15 +64,16 @@ fn main() {
     let mut tf = butter(order, cutoff_frequency);
     let y = tf.filtfilt(x.clone(), t.clone());
 
-    if !std::path::Path::new("plots").exists() {
-        fs::create_dir_all("plots").unwrap();
+    let plot_dir = "examples/plots";
+    if !std::path::Path::new(plot_dir).exists() {
+        fs::create_dir_all(plot_dir).unwrap();
     }
 
     plot(
         &t,
         &x,
         (1200, 600),
-        "plots/butter_without_filter.png",
+        &format!("{}/butter_without_filter.png", plot_dir),
         "without filter",
         "time",
         "amplitude",
@@ -82,7 +83,7 @@ fn main() {
         &t,
         &y,
         (1200, 600),
-        "plots/butter_with_filter.png",
+        &format!("{}/butter_with_filter.png", plot_dir),
         "with filter",
         "time",
         "amplitude",
