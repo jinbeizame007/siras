@@ -37,9 +37,35 @@ mod tests {
 
     #[test]
     fn test_butter() {
+        // 1st order: (s + 1)
+        let tf = butter(1, 1.0);
+        assert_eq!(tf.num, dvector![1.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
+
+        // 2nd order: (s^2 + sqrt(2)s + 1)
         let tf = butter(2, 1.0);
         assert_eq!(tf.num, dvector![1.0]);
-        assert_relative_eq!(tf.den, dvector![1.0, 1.414214, 1.0], epsilon = 1e-5);
+        assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
+
+        // 3rd order: (s + 1)(s^2 + s + 1)
+        let tf = butter(3, 1.0);
+        assert_eq!(tf.num, dvector![1.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
+
+        // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
+        let tf = butter(4, 1.0);
+        assert_eq!(tf.num, dvector![1.0]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
+                2.0 + (2.0 + f64::sqrt(2.0)).sqrt() * (2.0 - f64::sqrt(2.0)).sqrt(),
+                (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
+                1.0
+            ],
+            epsilon = 1e-14
+        );
     }
 
     #[test]
