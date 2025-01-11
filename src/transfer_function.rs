@@ -306,7 +306,7 @@ fn characteristic_polynomial(matrix: &DMatrix<f64>) -> Option<DVector<f64>> {
     Some(coeffs)
 }
 
-fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
+pub fn convolve(a: &DVector<Complex<f64>>, b: &DVector<Complex<f64>>) -> DVector<Complex<f64>> {
     let n = a.len();
     let m = b.len();
     let mut result = DVector::from_element(n + m - 1, Complex::new(0.0, 0.0));
