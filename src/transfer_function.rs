@@ -13,6 +13,33 @@ impl ContinuousTransferFunction {
         Self { num, den, x }
     }
 
+    pub fn reset(&mut self) {
+        self.x = DVector::zeros(self.num.len());
+    }
+
+    pub fn filtfilt(&mut self, u: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        // padding
+        let u_reserved = DVector::from_iterator(u.len(), u.as_slice().iter().rev().copied());
+        let u_padded = stack![
+            - u_reserved.clone().add_scalar(u[0] * 2.0);
+            u.clone();
+            - u_reserved.clone().add_scalar(u[u.len() - 1] * 2.0)
+        ];
+        let dt = t[1] - t[0];
+        let t_padded = stack![t; DVector::from_iterator(t.len() * 2, (1..=t.len() * 2).map(|i| t[0] + i as f64 * dt))];
+
+        let y_padded = self.simulate(u_padded.clone(), t_padded.clone());
+
+        let mut y_padded =
+            DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
+        y_padded = self.simulate(y_padded, t_padded.clone());
+        y_padded =
+            DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
+        let y = y_padded.rows(u.nrows(), u.nrows()).into_owned();
+
+        y
+    }
+
     pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
         let mut state_space = ContinuousStateSpace::from(self.clone());
 
@@ -20,6 +47,12 @@ impl ContinuousTransferFunction {
         self.x = state_space.x.clone();
 
         result
+    }
+
+    pub fn to_discrete(&self, dt: f64, alpha: f64) -> DiscreteTransferFunction {
+        let state_space = ContinuousStateSpace::from(self.clone());
+        let discrete_state_space = state_space.to_discrete(dt, alpha);
+        DiscreteTransferFunction::from(discrete_state_space)
     }
 }
 
@@ -154,18 +187,9 @@ impl ContinuousStateSpace {
                 i,
                 &(xout.row(i - 1) * ad + inputs[i - 1] * &bd0 + inputs[i] * bd1),
             );
-            // yout[i - 1] = xout[i - 1] * c.transpose() + inputs[i - 1] * d.transpose();
         }
 
         DVector::from_column_slice((xout.clone() * self.c.transpose()).column(0).as_slice())
-        // + inputs * self.d.transpose()
-
-        // let exp_mt = expm(&m.transpose());
-        // let ad = exp_mt.rows(0, n_states).cols(0, n_states);
-        // let bd = exp_mt.rows(n_states, 1).cols(n_states, 1);
-        // let x = exp_mt * self.x + self.b * input;
-        // self.x = x;
-        // self.c * self.x
     }
 
     pub fn to_discrete(&self, dt: f64, alpha: f64) -> DiscreteStateSpace {
