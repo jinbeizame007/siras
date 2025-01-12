@@ -4,8 +4,8 @@ use std::fs;
 use nalgebra::DVector;
 use plotters::prelude::*;
 
-extern crate tf;
-use tf::filter_design::chebyshev1;
+extern crate siras;
+use siras::filter_design::chebyshev1;
 
 fn plot(
     x: &DVector<f64>,
