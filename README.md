@@ -1,3 +1,9 @@
+# SIRAS: Signal Processing Library for Rust
+
+<div align="center">
+    <img src="media/siras.webp" alt="siras" width="50%">
+</div>
+
 ### Butterworth Filter
 
 ![butter_without_filter](examples/plots/butter_without_filter.png)
@@ -17,7 +23,6 @@
 ![chebyshev1_with_filter](examples/plots/chebyshev1_with_filter.png)
 
 ### Chebyshev Type II Filter
-
 ![chebyshev2_without_filter](examples/plots/chebyshev2_without_filter.png)
 
 ![chebyshev2_with_filter](examples/plots/chebyshev2_with_filter.png)
