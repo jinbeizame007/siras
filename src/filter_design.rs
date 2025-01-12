@@ -90,6 +90,39 @@ pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
     }
 }
 
+pub fn chebyshev2(
+    order: usize,
+    cutoff_frequency: f64,
+    ripple_db: f64,
+) -> ContinuousTransferFunction {
+    let ripple = 1.0 / f64::sqrt(10.0_f64.powf(ripple_db / 10.0) - 1.0);
+
+    let mut poles_num_vec: Vec<Complex<f64>> = vec![];
+    let mut poles_den: DVector<Complex<f64>> = DVector::zeros(order);
+    for k in 1..=order {
+        let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
+        if (2 * k - 1) != order {
+            poles_num_vec.push(Complex::new(0.0, -cutoff_frequency / theta.cos()));
+        }
+        poles_den[k - 1] = 1.0
+            / Complex::new(
+                (-1.0 / cutoff_frequency)
+                    * (((1.0 / order as f64) * (1.0 / ripple).asinh()).sinh() * theta.sin()).abs(),
+                (1.0 / cutoff_frequency)
+                    * ((1.0 / order as f64) * (1.0 / ripple).asinh()).cosh()
+                    * theta.cos(),
+            );
+    }
+    let poles_num = DVector::from_vec(poles_num_vec);
+    let mut num = DVector::from_vec(poly(poles_num).iter().map(|e| e.re).collect::<Vec<_>>());
+    let den = DVector::from_vec(poly(poles_den).iter().map(|e| e.re).collect::<Vec<_>>());
+
+    // Normalize the numerator
+    num *= den[den.len() - 1] / num[num.len() - 1];
+
+    ContinuousTransferFunction::new(num, den)
+}
+
 pub fn poly(vec: DVector<Complex<f64>>) -> DVector<Complex<f64>> {
     let mut a = DVector::from_vec(vec![Complex::new(1.0, 0.0)]);
     for x in vec.iter() {
@@ -226,6 +259,33 @@ mod tests {
                 250594.32325190003
             ],
             epsilon = 1e-9
+        );
+    }
+
+    #[test]
+    fn test_chebyshev2() {
+        let tf = chebyshev2(1, 100.0, 1.0);
+        assert_relative_eq!(tf.num, dvector![196.52267283602717]);
+        assert_relative_eq!(tf.den, dvector![1.0, 196.52267283602717]);
+
+        let tf = chebyshev2(2, 100.0, 1.0);
+        assert_relative_eq!(
+            tf.num,
+            dvector![0.8912509381337451, 0.0, 17825.018762674903],
+            epsilon = 1e-10
+        );
+        assert_relative_eq!(tf.den, dvector![1.0, 62.26482262384244, 17825.01876267491]);
+
+        let tf = chebyshev2(3, 100.0, 1.0);
+        assert_relative_eq!(
+            tf.num,
+            dvector![589.5680185080812, 0.0, 7860906.913441084],
+            epsilon = 1e-8
+        );
+        assert_relative_eq!(
+            tf.den,
+            dvector![1.0, 631.729847643468, 25746.0759780469, 7860906.913441085],
+            epsilon = 1e-8
         );
     }
 
