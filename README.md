@@ -1,7 +1,7 @@
 # SIRAS: Signal Processing Library for Rust
 
 <div align="center">
-    <img src="media/siras.webp" alt="siras" width="50%">
+    <img src="media/siras.webp" alt="siras" width="45%">
 </div>
 
 ### Butterworth Filter
