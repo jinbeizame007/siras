@@ -9,3 +9,9 @@
 ![bessel_without_filter](examples/plots/bessel_without_filter.png)
 
 ![bessel_with_filter](examples/plots/bessel_with_filter.png)
+
+### Chebyshev Type I Filter
+
+![chebyshev1_without_filter](examples/plots/chebyshev1_without_filter.png)
+
+![chebyshev1_with_filter](examples/plots/chebyshev1_with_filter.png)
