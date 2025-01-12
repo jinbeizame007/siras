@@ -15,3 +15,9 @@
 ![chebyshev1_without_filter](examples/plots/chebyshev1_without_filter.png)
 
 ![chebyshev1_with_filter](examples/plots/chebyshev1_with_filter.png)
+
+### Chebyshev Type II Filter
+
+![chebyshev2_without_filter](examples/plots/chebyshev2_without_filter.png)
+
+![chebyshev2_with_filter](examples/plots/chebyshev2_with_filter.png)
