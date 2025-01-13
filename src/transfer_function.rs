@@ -19,17 +19,19 @@ impl ContinuousTransferFunction {
 
     pub fn filtfilt(&mut self, u: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
         // padding
-        let u_reserved = DVector::from_iterator(u.len(), u.as_slice().iter().rev().copied());
+        let u_reversed = DVector::from_iterator(u.len(), u.as_slice().iter().rev().copied());
         let u_padded = stack![
-            - u_reserved.clone().add_scalar(u[0] * 2.0);
+            - u_reversed.clone().add_scalar(u[0] * 2.0);
             u.clone();
-            - u_reserved.clone().add_scalar(u[u.len() - 1] * 2.0)
+            - u_reversed.clone().add_scalar(u[u.len() - 1] * 2.0)
         ];
         let dt = t[1] - t[0];
         let t_padded = stack![t; DVector::from_iterator(t.len() * 2, (1..=t.len() * 2).map(|i| t[0] + i as f64 * dt))];
 
+        // forward filtering
         let y_padded = self.simulate(u_padded.clone(), t_padded.clone());
 
+        // backward filtering
         let mut y_padded =
             DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
         y_padded = self.simulate(y_padded, t_padded.clone());
@@ -157,13 +159,36 @@ impl ContinuousStateSpace {
         Self { a, b, c, d, x }
     }
 
+    pub fn filtfilt(&mut self, u: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        // padding
+        let u_reversed = DVector::from_iterator(u.len(), u.as_slice().iter().rev().copied());
+        let u_padded = stack![
+            - u_reversed.clone().add_scalar(u[0] * 2.0);
+            u.clone();
+            - u_reversed.clone().add_scalar(u[u.len() - 1] * 2.0)
+        ];
+        let dt = t[1] - t[0];
+        let t_padded = stack![t; DVector::from_iterator(t.len() * 2, (1..=t.len() * 2).map(|i| t[0] + i as f64 * dt))];
+
+        // forward filtering
+        let y_padded = self.simulate(u_padded.clone(), t_padded.clone());
+
+        // backward filtering
+        let mut y_padded =
+            DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
+        y_padded = self.simulate(y_padded, t_padded.clone());
+        y_padded =
+            DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
+        let y = y_padded.rows(u.nrows(), u.nrows()).into_owned();
+
+        y
+    }
+
     pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
         let n_states = self.a.nrows();
         let n_inputs = self.b.ncols();
 
         let mut xout = DMatrix::<f64>::zeros(t.len(), n_states);
-        // let mut yout = Vec::<f64>::with_capacity(t.len());
-
         xout.set_row(0, &self.x.transpose());
 
         let dt = t[1] - t[0];
