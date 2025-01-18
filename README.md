@@ -4,6 +4,8 @@
     <img src="media/siras.webp" alt="siras" width="45%">
 </div>
 
+## Filters
+
 ### Butterworth Filter
 
 ![butter_without_filter](media/butter_without_filter.png)
@@ -26,3 +28,9 @@
 ![chebyshev2_without_filter](media/chebyshev2_without_filter.png)
 
 ![chebyshev2_with_filter](media/chebyshev2_with_filter.png)
+
+## FFT
+
+![chebyshev2_without_filter](media/chebyshev2_without_filter.png)
+
+![fft](media/fft.png)
