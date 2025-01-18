@@ -240,6 +240,19 @@ mod tests {
             epsilon = 1e-9
         );
 
+        let tf = chebyshev1(4, 90.0, 0.1);
+        assert_relative_eq!(tf.num, dvector![53736256.63180374], epsilon = 1e-7);
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                162.33952536509088,
+                21277.06074788149,
+                1476589.879470203,
+                54358493.15756986,
+            ]
+        );
+
         let tf = chebyshev1(1, 100.0, 3.0);
         assert_relative_eq!(tf.num, dvector![100.23772930076005]);
         assert_relative_eq!(tf.den, dvector![1.0, 100.23772930076005]);
