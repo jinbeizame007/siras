@@ -10,11 +10,11 @@ pub fn butter(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction
     let thetas: Vec<f64> = (1..=order)
         .map(|k| PI * (2 * k + order - 1) as f64 / (2 * order) as f64)
         .collect();
-    let mut poles: Vec<Complex<f64>> = thetas
+    let poles: Vec<Complex<f64>> = thetas
         .iter()
         .map(|theta| cutoff_frequency * Complex::new(theta.cos(), theta.sin()))
+        .filter(|p| p.re <= 0.0)
         .collect();
-    poles = poles.iter().filter(|p| p.re <= 0.0).cloned().collect();
     let den_complex = poly(DVector::from_vec(poles));
     let den = DVector::from_vec(den_complex.iter().map(|e| e.re).collect::<Vec<_>>());
 
