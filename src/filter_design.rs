@@ -2,7 +2,8 @@ use std::f64::consts::PI;
 
 use nalgebra::{dvector, stack, Complex, DVector};
 
-use crate::transfer_function::{convolve, ContinuousTransferFunction};
+use crate::math::{factorial, polynomial};
+use crate::transfer_function::ContinuousTransferFunction;
 
 pub fn butter(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction {
     let num = dvector![cutoff_frequency.powf(order as f64)];
@@ -15,7 +16,7 @@ pub fn butter(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction
         .map(|theta| cutoff_frequency * Complex::new(theta.cos(), theta.sin()))
         .filter(|p| p.re <= 0.0)
         .collect();
-    let den_complex = poly(DVector::from_vec(poles));
+    let den_complex = polynomial(DVector::from_vec(poles));
     let den = DVector::from_vec(den_complex.iter().map(|e| e.re).collect::<Vec<_>>());
 
     ContinuousTransferFunction::new(num, den)
@@ -67,7 +68,7 @@ pub fn chebyshev1(
             cutoff_frequency * ((1.0 / order as f64) * (1.0 / ripple).asinh()).cosh() * theta.cos(),
         );
     }
-    let den = DVector::from_vec(poly(poles).iter().map(|e| e.re).collect::<Vec<_>>());
+    let den = DVector::from_vec(polynomial(poles).iter().map(|e| e.re).collect::<Vec<_>>());
 
     ContinuousTransferFunction::new(num, den)
 }
@@ -114,30 +115,23 @@ pub fn chebyshev2(
             );
     }
     let poles_num = DVector::from_vec(poles_num_vec);
-    let mut num = DVector::from_vec(poly(poles_num).iter().map(|e| e.re).collect::<Vec<_>>());
-    let den = DVector::from_vec(poly(poles_den).iter().map(|e| e.re).collect::<Vec<_>>());
+    let mut num = DVector::from_vec(
+        polynomial(poles_num)
+            .iter()
+            .map(|e| e.re)
+            .collect::<Vec<_>>(),
+    );
+    let den = DVector::from_vec(
+        polynomial(poles_den)
+            .iter()
+            .map(|e| e.re)
+            .collect::<Vec<_>>(),
+    );
 
     // Normalize the numerator
     num *= den[den.len() - 1] / num[num.len() - 1];
 
     ContinuousTransferFunction::new(num, den)
-}
-
-pub fn poly(vec: DVector<Complex<f64>>) -> DVector<Complex<f64>> {
-    let mut a = DVector::from_vec(vec![Complex::new(1.0, 0.0)]);
-    for x in vec.iter() {
-        a = convolve(&a, &DVector::from_vec(vec![Complex::new(1.0, 0.0), -x]));
-    }
-
-    a
-}
-
-pub fn factorial(n: usize) -> usize {
-    if n == 0 {
-        1
-    } else {
-        n * factorial(n - 1)
-    }
 }
 
 #[cfg(test)]
@@ -299,25 +293,6 @@ mod tests {
             tf.den,
             dvector![1.0, 631.729847643468, 25746.0759780469, 7860906.913441085],
             epsilon = 1e-8
-        );
-    }
-
-    #[test]
-    fn test_poly() {
-        let vec = dvector![
-            Complex::new(1.0, 0.0),
-            Complex::new(2.0, 0.0),
-            Complex::new(3.0, 0.0)
-        ];
-        let result = poly(vec);
-        assert_eq!(
-            result,
-            dvector![
-                Complex::new(1.0, 0.0),
-                Complex::new(-6.0, 0.0),
-                Complex::new(11.0, 0.0),
-                Complex::new(-6.0, 0.0)
-            ]
         );
     }
 }
