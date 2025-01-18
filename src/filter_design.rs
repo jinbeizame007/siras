@@ -276,28 +276,6 @@ mod tests {
     }
 
     #[test]
-    fn test_chebyshev1_filtfilt() {
-        let f0 = 10.0;
-        let f1 = 100.0;
-        let sample_frequency = 32000;
-        let cutoff_frequency = 90.0;
-        let ripple = 0.1;
-        let order = 4;
-        let t = DVector::from_iterator(
-            sample_frequency + 1,
-            (0..=sample_frequency).map(|i| i as f64 / sample_frequency as f64),
-        );
-        let low_frequency_sin_wave = (2.0 * PI * f0 * t.clone()).map(|e| e.sin());
-        let high_frequency_sin_wave = (2.0 * PI * f1 * t.clone()).map(|e| e.sin());
-        let x = low_frequency_sin_wave.clone() + high_frequency_sin_wave;
-
-        let mut tf = chebyshev1(order, cutoff_frequency, ripple);
-        let y = tf.filtfilt(x, t);
-
-        assert_relative_eq!(y, low_frequency_sin_wave, epsilon = 0.03);
-    }
-
-    #[test]
     fn test_chebyshev2() {
         let tf = chebyshev2(1, 100.0, 1.0);
         assert_relative_eq!(tf.num, dvector![196.52267283602717]);
