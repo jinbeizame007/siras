@@ -68,6 +68,20 @@ fn reverse_bits(input: usize, width: usize) -> usize {
     (0..width).fold(0, |acc, i| (acc << 1) | ((input >> i) & 1))
 }
 
+pub fn fftfreq(n: usize, dt: f64) -> DVector<f64> {
+    let value = 1.0 / (n as f64 * dt);
+    let mut result = DVector::<f64>::zeros(n);
+    let mid_n = (n - 1) / 2 + 1;
+    for i in 0..mid_n {
+        result[i] = value * i as f64;
+    }
+    for i in 0..(n - mid_n) {
+        result[i + mid_n] = value * (i as f64 - (n / 2) as f64);
+    }
+
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -150,6 +164,30 @@ mod tests {
                 -4.0,
                 -9.65685424949238
             ]
+        );
+    }
+
+    #[test]
+    fn test_fftfreq() {
+        let n = 5;
+        let dt = 1.0;
+        let freq = fftfreq(n, dt);
+        assert_relative_eq!(freq, dvector![0.0, 0.2, 0.4, -0.4, -0.2]);
+
+        let n = 8;
+        let dt = 1.0;
+        let freq = fftfreq(n, dt);
+        assert_relative_eq!(
+            freq,
+            dvector![0.0, 0.125, 0.25, 0.375, -0.5, -0.375, -0.25, -0.125]
+        );
+
+        let n = 10;
+        let dt = 0.2;
+        let freq = fftfreq(n, dt);
+        assert_relative_eq!(
+            freq,
+            dvector![0.0, 0.5, 1., 1.5, 2., -2.5, -2., -1.5, -1., -0.5]
         );
     }
 }
