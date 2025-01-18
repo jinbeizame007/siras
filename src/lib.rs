@@ -1,3 +1,4 @@
+pub mod fft;
 pub mod filter_design;
 pub mod math;
 pub mod signal_extension;
