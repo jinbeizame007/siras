@@ -63,7 +63,7 @@ fn main() {
         (2.0 * PI * f0 * t.clone()).map(|e| e.sin()) + (2.0 * PI * f1 * t.clone()).map(|e| e.sin());
 
     let mut tf = chebyshev2(order, cutoff_frequency, ripple);
-    let y = tf.filtfilt(x.clone(), t.clone());
+    let y = tf.filtfilt(&x, &t);
 
     let plot_dir = "examples/plots";
     if !std::path::Path::new(plot_dir).exists() {

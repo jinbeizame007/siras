@@ -1,6 +1,6 @@
-use std::f64::consts::PI;
-
 use nalgebra::{stack, Complex, DMatrix, DVector};
+
+use crate::signal_extension::anti_symmetric_reflect_extension;
 
 #[derive(Clone, Debug)]
 pub struct ContinuousTransferFunction {
@@ -19,7 +19,7 @@ impl ContinuousTransferFunction {
         self.x = DVector::zeros(self.num.len());
     }
 
-    pub fn filtfilt(&mut self, u: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
         let mut state_space = ContinuousStateSpace::from(self.clone());
 
         let result = state_space.filtfilt(u, t);
@@ -145,27 +145,26 @@ impl ContinuousStateSpace {
         Self { a, b, c, d, x }
     }
 
-    pub fn filtfilt(&mut self, u: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
         // padding
-        let u_reversed = DVector::from_iterator(u.len(), u.as_slice().iter().rev().copied());
-        let u_padded = stack![
-            - u_reversed.clone().add_scalar(u[0] * 2.0);
-            u.clone();
-            - u_reversed.clone().add_scalar(u[u.len() - 1] * 2.0)
-        ];
+        let u_extended = anti_symmetric_reflect_extension(u.clone());
         let dt = t[1] - t[0];
-        let t_padded = stack![t; DVector::from_iterator(t.len() * 2, (1..=t.len() * 2).map(|i| t[0] + i as f64 * dt))];
+        let t_extended = stack![t; DVector::from_iterator(t.len() * 2, (1..=t.len() * 2).map(|i| t[0] + i as f64 * dt))];
 
         // forward filtering
-        let y_padded = self.simulate(u_padded.clone(), t_padded.clone());
+        let y_extended = self.simulate(u_extended.clone(), t_extended.clone());
 
         // backward filtering
-        let mut y_padded =
-            DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
-        y_padded = self.simulate(y_padded, t_padded.clone());
-        y_padded =
-            DVector::from_iterator(y_padded.len(), y_padded.as_slice().iter().rev().copied());
-        let y = y_padded.rows(u.nrows(), u.nrows()).into_owned();
+        let mut y_extended = DVector::from_iterator(
+            y_extended.len(),
+            y_extended.as_slice().iter().rev().copied(),
+        );
+        y_extended = self.simulate(y_extended, t_extended.clone());
+        y_extended = DVector::from_iterator(
+            y_extended.len(),
+            y_extended.as_slice().iter().rev().copied(),
+        );
+        let y = y_extended.rows(u.nrows(), u.nrows()).into_owned();
 
         y
     }
@@ -383,6 +382,7 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use nalgebra::{dmatrix, dvector};
+    use std::f64::consts::PI;
 
     #[test]
     fn test_step_discrete_transfer_function() {
@@ -467,7 +467,7 @@ mod tests {
             54358493.15756986,
         ];
         let mut tf = ContinuousTransferFunction::new(num, den);
-        let y = tf.filtfilt(x, t);
+        let y = tf.filtfilt(&x, &t);
 
         assert_relative_eq!(y, low_frequency_sin_wave, epsilon = 0.03);
     }
