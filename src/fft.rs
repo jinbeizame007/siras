@@ -4,6 +4,10 @@ use nalgebra::{Complex, DVector, DVectorView, DVectorViewMut, Dyn};
 
 pub fn fft(x: &DVector<f64>) -> DVector<Complex<f64>> {
     let n = x.len();
+    if (n as f64).log2().fract() != 0.0 {
+        panic!("n must be a power of 2");
+    }
+
     let w = DVector::from_vec(
         (0..(n / 2))
             .map(|i| Complex::new(0.0, -2.0 * i as f64 * PI / n as f64).exp())
@@ -120,8 +124,6 @@ mod tests {
 
         let spectrum_real = spectrum.map(|c| c.re);
         let spectrum_imag = spectrum.map(|c| c.im);
-        // let expected_spectrum_real = expected_spectrum.map(|c| c.re);
-        // let expected_spectrum_imag = expected_spectrum.map(|c| c.im);
 
         assert_relative_eq!(spectrum_real, dvector![3.0, -1.0]);
         assert_relative_eq!(spectrum_imag, dvector![0.0, 0.0]);
