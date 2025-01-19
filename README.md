@@ -31,6 +31,12 @@
 
 ## FFT
 
-![chebyshev2_without_filter](media/chebyshev2_without_filter.png)
+![original_signal](media/original_signal.png)
+
+### FFT (time domain -> frequency domain)
 
 ![fft](media/fft.png)
+
+### IFFT (frequency domain -> time domain)
+
+![reconstructed_signal](media/reconstructed_signal.png)
