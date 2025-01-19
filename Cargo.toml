@@ -8,3 +8,10 @@ approx = "0.5.1"
 nalgebra = { version = "0.33.2", features = ["rand"] }
 plotters = "0.3.7"
 rand = "0.8.5"
+
+[dev-dependencies]
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "fft_benchmark"
+harness = false
