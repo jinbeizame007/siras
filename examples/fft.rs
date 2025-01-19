@@ -5,7 +5,7 @@ use nalgebra::{ComplexField, DVector};
 use plotters::prelude::*;
 
 extern crate siras;
-use siras::fft::{fft, fftfreq};
+use siras::fft::{fft, fftfreq, ifft};
 
 fn plot(
     x: &DVector<f64>,
@@ -59,10 +59,13 @@ fn main() {
         sample_frequency,
         (0..sample_frequency).map(|i| i as f64 / sample_frequency as f64),
     );
-    let x = (2.0 * PI * frequency0 * t.clone()).map(|e| amplitude0 * e.sin())
+    let signal = (2.0 * PI * frequency0 * t.clone()).map(|e| amplitude0 * e.sin())
         + (2.0 * PI * frequency1 * t.clone()).map(|e| amplitude1 * e.sin());
 
-    let spectrums: DVector<f64> = fft(&x)
+    let spectrums = fft(&signal);
+    let reconstructed_signal = ifft(&spectrums).map(|e| e.re);
+
+    let amplitudes = spectrums
         .rows(0, 200)
         .map(|e| e.abs() / (sample_frequency as f64 / 2.0));
     let freqencies: DVector<f64> = fftfreq(t.len(), dt).rows(0, 200).into();
@@ -73,12 +76,34 @@ fn main() {
     }
 
     plot(
+        &t,
+        &signal,
+        (1200, 600),
+        &format!("{}/original_signal.png", plot_dir),
+        "original signal",
+        "time",
+        "amplitude",
+    )
+    .unwrap();
+
+    plot(
         &freqencies,
-        &spectrums,
+        &amplitudes,
         (1200, 600),
         &format!("{}/fft.png", plot_dir),
         "fft",
         "frequency",
+        "amplitude",
+    )
+    .unwrap();
+
+    plot(
+        &t,
+        &reconstructed_signal,
+        (1200, 600),
+        &format!("{}/reconstructed_signal.png", plot_dir),
+        "reconstructed signal",
+        "time",
         "amplitude",
     )
     .unwrap();
