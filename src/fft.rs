@@ -339,4 +339,21 @@ mod tests {
             epsilon = 1e-15
         );
     }
+
+    #[test]
+    fn test_fft_ifft_loop() {
+        let n = 1024;
+        let mut rng = rand::thread_rng();
+        let original_signal = DVector::<f64>::from_fn(n, |_, _| rng.gen());
+        let spectrum = fft(&original_signal);
+        let signal = ifft(&spectrum);
+
+        let signal_real = signal.map(|c| c.re);
+        let signal_imag = signal.map(|c| c.im);
+        let original_signal_real = original_signal.map(|c| c);
+        let original_signal_imag = DVector::<f64>::zeros(n);
+
+        assert_relative_eq!(signal_real, original_signal_real, epsilon = 1e-15);
+        assert_relative_eq!(signal_imag, original_signal_imag, epsilon = 1e-14);
+    }
 }
