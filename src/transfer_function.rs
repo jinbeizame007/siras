@@ -20,6 +20,7 @@ impl ContinuousTransferFunction {
         self.x = DVector::zeros(self.num.len());
     }
 
+    #[allow(clippy::toplevel_ref_arg)]
     pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
         let mut state_space = ContinuousStateSpace::from(self.clone());
 

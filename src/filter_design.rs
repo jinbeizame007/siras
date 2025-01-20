@@ -75,9 +75,9 @@ pub fn chebyshev1(
 
 pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
     if order == 0 {
-        return dvector![1.0];
+        dvector![1.0]
     } else if order == 1 {
-        return dvector![1.0, 0.0];
+        dvector![1.0, 0.0]
     } else {
         let mut polynomials: Vec<DVector<f64>> = vec![dvector![1.0], dvector![1.0, 0.0]];
         for k in 2..=order {
@@ -87,7 +87,7 @@ pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
             );
         }
 
-        return polynomials[order].clone();
+        polynomials[order].clone()
     }
 }
 
