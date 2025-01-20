@@ -5,17 +5,31 @@ use nalgebra::{dvector, stack, Complex, DVector};
 use crate::math::{factorial, polynomial};
 use crate::transfer_function::ContinuousTransferFunction;
 
-pub fn butter(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction {
-    let num = dvector![cutoff_frequency.powf(order as f64)];
+pub enum FilterType {
+    LowPass,
+    HighPass,
+}
+
+pub fn butter(
+    order: usize,
+    cutoff_frequency: f64,
+    filter_type: FilterType,
+) -> ContinuousTransferFunction {
+    let num = match filter_type {
+        FilterType::LowPass => dvector![cutoff_frequency.powf(order as f64)],
+        FilterType::HighPass => stack![dvector![1.0]; DVector::zeros(order)],
+    };
 
     let thetas: Vec<f64> = (1..=order)
         .map(|k| PI * (2 * k + order - 1) as f64 / (2 * order) as f64)
         .collect();
+
     let poles: Vec<Complex<f64>> = thetas
         .iter()
         .map(|theta| cutoff_frequency * Complex::new(theta.cos(), theta.sin()))
         .filter(|p| p.re <= 0.0)
         .collect();
+
     let den_complex = polynomial(DVector::from_vec(poles));
     let den = DVector::from_vec(den_complex.iter().map(|e| e.re).collect::<Vec<_>>());
 
@@ -140,24 +154,24 @@ mod tests {
     use approx::assert_relative_eq;
 
     #[test]
-    fn test_butter() {
+    fn test_butterworth_low_pass() {
         // 1st order: (s + 1)
-        let tf = butter(1, 1.0);
+        let tf = butter(1, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
 
         // 2nd order: (s^2 + sqrt(2)s + 1)
-        let tf = butter(2, 1.0);
+        let tf = butter(2, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
 
         // 3rd order: (s + 1)(s^2 + s + 1)
-        let tf = butter(3, 1.0);
+        let tf = butter(3, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
 
         // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
-        let tf = butter(4, 1.0);
+        let tf = butter(4, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(
             tf.den,
@@ -169,6 +183,60 @@ mod tests {
                 1.0
             ],
             epsilon = 1e-14
+        );
+    }
+
+    #[test]
+    fn test_butterworth_high_pass() {
+        // 1st order: (s + 1)
+        let tf = butter(1, 1.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
+
+        // 2nd order: (s^2 + sqrt(2)s + 1)
+        let tf = butter(2, 1.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
+
+        let tf = butter(2, 10.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 14.142135623730951, 100.0]);
+
+        // 3rd order: (s + 1)(s^2 + s + 1)
+        let tf = butter(3, 1.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
+
+        let tf = butter(3, 10.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 20.0, 200.0, 1000.0]);
+
+        // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
+        let tf = butter(4, 1.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
+                2.0 + (2.0 + f64::sqrt(2.0)).sqrt() * (2.0 - f64::sqrt(2.0)).sqrt(),
+                (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
+                1.0
+            ],
+            epsilon = 1e-14
+        );
+
+        let tf = butter(4, 10.0, FilterType::HighPass);
+        assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                26.131259297527535,
+                341.4213562373095,
+                2613.125929752753,
+                10000.0
+            ],
         );
     }
 
