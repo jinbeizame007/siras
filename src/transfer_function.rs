@@ -38,6 +38,12 @@ impl ContinuousTransferFunction {
         result
     }
 
+    pub fn impulse(&self, t: DVector<f64>) -> DVector<f64> {
+        let state_space = ContinuousStateSpace::from(self.clone());
+
+        state_space.impulse(t)
+    }
+
     pub fn to_discrete(&self, dt: f64, alpha: f64) -> DiscreteTransferFunction {
         let state_space = ContinuousStateSpace::from(self.clone());
         let discrete_state_space = state_space.to_discrete(dt, alpha);
@@ -203,6 +209,15 @@ impl ContinuousStateSpace {
         DVector::from_column_slice((xout.clone() * self.c.transpose()).column(0).as_slice())
     }
 
+    pub fn impulse(&self, t: DVector<f64>) -> DVector<f64> {
+        let mut state_space = self.clone();
+        state_space.x = self.b.column(0).into();
+
+        let inputs = DVector::from_element(t.len(), 0.0);
+
+        state_space.simulate(inputs, t)
+    }
+
     pub fn to_discrete(&self, dt: f64, alpha: f64) -> DiscreteStateSpace {
         let a = self.a.clone();
         let b = self.b.clone();
@@ -349,6 +364,27 @@ mod tests {
         let outputs = continuous_state_space.simulate(inputs, t);
 
         assert_relative_eq!(outputs[4], f64::exp(-2.0));
+    }
+
+    #[test]
+    fn test_impulse_continuous_state_space() {
+        let a = dmatrix![-1.0, 0.0; 0.0, -2.0];
+        let b = dmatrix![0.5; 0.5];
+        let c = dmatrix![0.75, 1.0];
+        let d = dmatrix![-0.33];
+        let t = dvector![0.0, 0.25, 0.5, 0.75, 1.0];
+        let continuous_state_space = ContinuousStateSpace::new(a, b, c, d);
+        let response = continuous_state_space.impulse(t);
+
+        let expected_response = dvector![
+            0.875,
+            0.5953156235080935,
+            0.41138871797795873,
+            0.2887025373520954,
+            0.20562243205759723
+        ];
+
+        assert_relative_eq!(response, expected_response);
     }
 
     #[test]
