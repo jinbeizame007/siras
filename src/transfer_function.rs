@@ -115,6 +115,40 @@ impl DiscreteTransferFunction {
 
         output
     }
+
+    pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        let mut output = DVector::zeros(inputs.len());
+
+        for i in 0..inputs.len() {
+            output[i] = self.step(inputs[i]);
+        }
+
+        output
+    }
+
+    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
+        // padding
+        let u_extended = anti_symmetric_reflect_extension(u.clone());
+        let dt = t[1] - t[0];
+        let t_extended = stack![t; DVector::from_iterator(t.len() * 2, (1..=t.len() * 2).map(|i| t[0] + i as f64 * dt))];
+
+        // forward filtering
+        let y_extended = self.simulate(u_extended.clone(), t_extended.clone());
+
+        // backward filtering
+        let mut y_extended = DVector::from_iterator(
+            y_extended.len(),
+            y_extended.as_slice().iter().rev().copied(),
+        );
+        y_extended = self.simulate(y_extended, t_extended.clone());
+        y_extended = DVector::from_iterator(
+            y_extended.len(),
+            y_extended.as_slice().iter().rev().copied(),
+        );
+        let y = y_extended.rows(u.nrows(), u.nrows()).into_owned();
+
+        y
+    }
 }
 
 impl From<DiscreteStateSpace> for DiscreteTransferFunction {
