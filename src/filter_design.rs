@@ -148,6 +148,10 @@ pub fn chebyshev2(
     ContinuousTransferFunction::new(num, den)
 }
 
+pub fn digital_to_analog_cutoff(digital_cutoff: f64, sample_frequency: f64) -> f64 {
+    2.0 * sample_frequency * (PI * digital_cutoff / sample_frequency).tan()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -239,6 +243,61 @@ mod tests {
             ],
         );
     }
+
+    // #[test]
+    // fn test_butterworth_high_pass_discrete() {
+    //     // 1st order: (s + 1)
+    //     let dt = 0.01;
+    //     let tf = butter(1, 1.0, FilterType::HighPass).to_discrete(dt, );
+    //     assert_eq!(tf.num, dvector![1.0, 0.0]);
+    //     assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
+
+    // 2nd order: (s^2 + sqrt(2)s + 1)
+    // let tf = butter(2, 1.0, FilterType::HighPass);
+    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
+    // assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
+
+    // let tf = butter(2, 10.0, FilterType::HighPass);
+    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
+    // assert_relative_eq!(tf.den, dvector![1.0, 14.142135623730951, 100.0]);
+
+    // // 3rd order: (s + 1)(s^2 + s + 1)
+    // let tf = butter(3, 1.0, FilterType::HighPass);
+    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
+    // assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
+
+    // let tf = butter(3, 10.0, FilterType::HighPass);
+    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
+    // assert_relative_eq!(tf.den, dvector![1.0, 20.0, 200.0, 1000.0]);
+
+    // // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
+    // let tf = butter(4, 1.0, FilterType::HighPass);
+    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
+    // assert_relative_eq!(
+    //     tf.den,
+    //     dvector![
+    //         1.0,
+    //         (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
+    //         2.0 + (2.0 + f64::sqrt(2.0)).sqrt() * (2.0 - f64::sqrt(2.0)).sqrt(),
+    //         (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
+    //         1.0
+    //     ],
+    //     epsilon = 1e-14
+    // );
+
+    // let tf = butter(4, 10.0, FilterType::HighPass);
+    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
+    // assert_relative_eq!(
+    //     tf.den,
+    //     dvector![
+    //         1.0,
+    //         26.131259297527535,
+    //         341.4213562373095,
+    //         2613.125929752753,
+    //         10000.0
+    //     ],
+    // );
+    // }
 
     #[test]
     fn test_bessel() {
