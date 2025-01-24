@@ -83,23 +83,63 @@ pub fn chebyshev1(
     order: usize,
     cutoff_frequency: f64,
     ripple_db: f64,
+    filter_type: FilterType,
 ) -> ContinuousTransferFunction {
     let ripple = f64::sqrt(10.0_f64.powf(ripple_db / 10.0) - 1.0);
-    let num =
-        dvector![cutoff_frequency.powf(order as f64) / (2.0_f64.powf(order as f64 - 1.0) * ripple)];
+    let mut num = match filter_type {
+        FilterType::LowPass => dvector![
+            cutoff_frequency.powf(order as f64) / (2.0_f64.powf(order as f64 - 1.0) * ripple)
+        ],
+        FilterType::HighPass => {
+            stack![dvector![1.0 / (2.0_f64.powf(order as f64 - 1.0) * ripple)]; DVector::zeros(order)]
+        }
+    };
 
     let mut poles: DVector<Complex<f64>> = DVector::zeros(order);
-    for k in 1..=order {
-        let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
-        poles[k - 1] = Complex::new(
-            -1.0 * (cutoff_frequency
-                * ((1.0 / order as f64) * (1.0 / ripple).asinh()).sinh()
-                * theta.sin())
-            .abs(),
-            cutoff_frequency * ((1.0 / order as f64) * (1.0 / ripple).asinh()).cosh() * theta.cos(),
-        );
+    match filter_type {
+        FilterType::LowPass => {
+            for k in 1..=order {
+                let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
+                poles[k - 1] = cutoff_frequency
+                    * Complex::new(
+                        -1.0 * (((1.0 / order as f64) * (1.0 / ripple).asinh()).sinh()
+                            * theta.sin())
+                        .abs(),
+                        ((1.0 / order as f64) * (1.0 / ripple).asinh()).cosh() * theta.cos(),
+                    )
+            }
+        }
+        FilterType::HighPass => {
+            for k in 1..=order {
+                let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
+                poles[k - 1] = Complex::new(
+                    -1.0 * (((1.0 / order as f64) * (1.0 / ripple).asinh()).sinh() * theta.sin())
+                        .abs(),
+                    ((1.0 / order as f64) * (1.0 / ripple).asinh()).cosh() * theta.cos(),
+                )
+            }
+            num[0] /= (-poles.clone()).product().re;
+
+            poles = poles.map(|e| e / cutoff_frequency);
+        }
     }
-    let den = DVector::from_vec(polynomial(poles).iter().map(|e| e.re).collect::<Vec<_>>());
+    let den = match filter_type {
+        FilterType::LowPass => {
+            DVector::from_vec(polynomial(poles).iter().map(|e| e.re).collect::<Vec<_>>())
+        }
+        FilterType::HighPass => {
+            let den = DVector::from_vec(
+                polynomial(poles)
+                    .iter()
+                    .rev()
+                    .map(|e| e.re)
+                    .collect::<Vec<_>>(),
+            );
+            let den_0 = den[0];
+
+            den.map(|e| e / den_0)
+        }
+    };
 
     ContinuousTransferFunction::new(num, den)
 }
@@ -303,19 +343,19 @@ mod tests {
     }
 
     #[test]
-    fn test_chebyshev1() {
-        let tf = chebyshev1(1, 100.0, 1.0);
+    fn test_chebyshev1_low_pass() {
+        let tf = chebyshev1(1, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![196.52267283602717]);
         assert_relative_eq!(tf.den, dvector![1.0, 196.52267283602717]);
 
-        let tf = chebyshev1(2, 100.0, 1.0);
+        let tf = chebyshev1(2, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![9826.133641801356]);
         assert_relative_eq!(
             tf.den,
             dvector![1.0, 109.77343285639276, 11025.103280538484]
         );
 
-        let tf = chebyshev1(3, 100.0, 1.0);
+        let tf = chebyshev1(3, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![491306.6820900678]);
         assert_relative_eq!(
             tf.den,
@@ -323,7 +363,7 @@ mod tests {
             epsilon = 1e-9
         );
 
-        let tf = chebyshev1(4, 90.0, 0.1);
+        let tf = chebyshev1(4, 90.0, 0.1, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![53736256.63180374], epsilon = 1e-7);
         assert_relative_eq!(
             tf.den,
@@ -336,15 +376,15 @@ mod tests {
             ]
         );
 
-        let tf = chebyshev1(1, 100.0, 3.0);
+        let tf = chebyshev1(1, 100.0, 3.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![100.23772930076005]);
         assert_relative_eq!(tf.den, dvector![1.0, 100.23772930076005]);
 
-        let tf = chebyshev1(2, 100.0, 3.0);
+        let tf = chebyshev1(2, 100.0, 3.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![5011.886465038001], epsilon = 1e-11);
         assert_relative_eq!(tf.den, dvector![1.0, 64.48996513028668, 7079.477801252795]);
 
-        let tf = chebyshev1(3, 100.0, 3.0);
+        let tf = chebyshev1(3, 100.0, 3.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![250594.32325190006], epsilon = 1e-9);
         assert_relative_eq!(
             tf.den,
@@ -355,6 +395,72 @@ mod tests {
                 250594.32325190003
             ],
             epsilon = 1e-9
+        );
+    }
+
+    #[test]
+    fn test_chebyshev1_high_pass() {
+        let tf = chebyshev1(1, 100.0, 1.0, FilterType::HighPass);
+        assert_relative_eq!(tf.num, dvector![1.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 50.88471399095875]);
+
+        let tf = chebyshev1(2, 100.0, 1.0, FilterType::HighPass);
+        assert_relative_eq!(tf.num, dvector![0.8912509381337455, 0.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 99.56680682544251, 9070.20981622186]);
+
+        let tf = chebyshev1(3, 100.0, 1.0, FilterType::HighPass);
+        assert_relative_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![1.0, 252.0643864052326, 20116.58391618567, 2035388.559638349],
+            epsilon = 1e-8
+        );
+
+        let tf = chebyshev1(4, 100.0, 1.0, FilterType::HighPass);
+        assert_relative_eq!(
+            tf.num,
+            dvector![0.8912509381337455, 0.0, 0.0, 0.0, 0.0],
+            epsilon = 1e-14
+        );
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                269.4285411067784,
+                52749.61060352098,
+                3456879.650283327,
+                362808392.6488744,
+            ],
+            epsilon = 1e-7
+        );
+
+        let tf = chebyshev1(1, 100.0, 3.0, FilterType::HighPass);
+        assert_relative_eq!(tf.num, dvector![1.0, 0.0]);
+        assert_relative_eq!(tf.den, dvector![1.0, 99.76283451109836], epsilon = 1e-13);
+
+        let tf = chebyshev1(2, 100.0, 3.0, FilterType::HighPass);
+        assert_relative_eq!(
+            tf.num,
+            dvector![0.7079457843841378, 0.0, 0.0],
+            epsilon = 1e-13
+        );
+        assert_relative_eq!(
+            tf.den,
+            dvector![1.0, 91.09424019787792, 14125.335626068898],
+            epsilon = 1e-11
+        );
+
+        let tf = chebyshev1(3, 100.0, 3.0, FilterType::HighPass);
+        assert_relative_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
+        assert_relative_eq!(
+            tf.den,
+            dvector![
+                1.0,
+                370.45853454631384,
+                23832.9587355016,
+                3990513.3804439357
+            ],
+            epsilon = 1e-8
         );
     }
 
