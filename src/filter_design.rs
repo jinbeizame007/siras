@@ -36,16 +36,33 @@ pub fn butter(
     ContinuousTransferFunction::new(num, den)
 }
 
-pub fn bessel(order: usize, cutoff_frequency: f64) -> ContinuousTransferFunction {
+pub fn bessel(
+    order: usize,
+    cutoff_frequency: f64,
+    filter_type: FilterType,
+) -> ContinuousTransferFunction {
     let den_bessel = reverse_bessel_polynomial(order);
-    let den_cutoff = DVector::from_vec(
-        (0..=order)
-            .rev()
-            .map(|k| (1.0 / cutoff_frequency).powf(k as f64))
-            .collect::<Vec<_>>(),
-    );
+    let den_cutoff = match filter_type {
+        FilterType::LowPass => DVector::from_vec(
+            (0..=order)
+                .rev()
+                .map(|k| (1.0 / cutoff_frequency).powf(k as f64))
+                .collect::<Vec<_>>(),
+        ),
+        FilterType::HighPass => DVector::from_vec(
+            (0..=order)
+                .map(|k| (cutoff_frequency).powf(k as f64))
+                .collect::<Vec<_>>(),
+        ),
+    };
+
     let den = den_bessel.component_mul(&den_cutoff);
-    let num = dvector![den_bessel[den_bessel.len() - 1]];
+    let num = match filter_type {
+        FilterType::LowPass => dvector![den_bessel[den_bessel.len() - 1]],
+        FilterType::HighPass => {
+            stack![dvector![den_bessel[den_bessel.len() - 1]]; DVector::zeros(order)]
+        }
+    };
 
     ContinuousTransferFunction::new(num, den)
 }
@@ -244,80 +261,25 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn test_butterworth_high_pass_discrete() {
-    //     // 1st order: (s + 1)
-    //     let dt = 0.01;
-    //     let tf = butter(1, 1.0, FilterType::HighPass).to_discrete(dt, );
-    //     assert_eq!(tf.num, dvector![1.0, 0.0]);
-    //     assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
-
-    // 2nd order: (s^2 + sqrt(2)s + 1)
-    // let tf = butter(2, 1.0, FilterType::HighPass);
-    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
-    // assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
-
-    // let tf = butter(2, 10.0, FilterType::HighPass);
-    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
-    // assert_relative_eq!(tf.den, dvector![1.0, 14.142135623730951, 100.0]);
-
-    // // 3rd order: (s + 1)(s^2 + s + 1)
-    // let tf = butter(3, 1.0, FilterType::HighPass);
-    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
-    // assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
-
-    // let tf = butter(3, 10.0, FilterType::HighPass);
-    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
-    // assert_relative_eq!(tf.den, dvector![1.0, 20.0, 200.0, 1000.0]);
-
-    // // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
-    // let tf = butter(4, 1.0, FilterType::HighPass);
-    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
-    // assert_relative_eq!(
-    //     tf.den,
-    //     dvector![
-    //         1.0,
-    //         (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
-    //         2.0 + (2.0 + f64::sqrt(2.0)).sqrt() * (2.0 - f64::sqrt(2.0)).sqrt(),
-    //         (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(),
-    //         1.0
-    //     ],
-    //     epsilon = 1e-14
-    // );
-
-    // let tf = butter(4, 10.0, FilterType::HighPass);
-    // assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
-    // assert_relative_eq!(
-    //     tf.den,
-    //     dvector![
-    //         1.0,
-    //         26.131259297527535,
-    //         341.4213562373095,
-    //         2613.125929752753,
-    //         10000.0
-    //     ],
-    // );
-    // }
-
     #[test]
-    fn test_bessel() {
-        let tf = bessel(1, 1.0);
+    fn test_bessel_low_pass() {
+        let tf = bessel(1, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
 
-        let tf = bessel(2, 1.0);
+        let tf = bessel(2, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![3.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 3.0, 3.0]);
 
-        let tf = bessel(3, 1.0);
+        let tf = bessel(3, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![15.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 6.0, 15.0, 15.0]);
 
-        let tf = bessel(4, 1.0);
+        let tf = bessel(4, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![105.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 10.0, 45.0, 105.0, 105.0]);
 
-        let tf = bessel(5, 1.0);
+        let tf = bessel(5, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![945.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 15.0, 105.0, 420.0, 945.0, 945.0]);
     }
