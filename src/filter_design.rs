@@ -10,7 +10,7 @@ pub enum FilterType {
     HighPass,
 }
 
-pub fn butter(
+pub fn design_butter(
     order: usize,
     cutoff_frequency: f64,
     filter_type: FilterType,
@@ -36,7 +36,7 @@ pub fn butter(
     ContinuousTransferFunction::new(num, den)
 }
 
-pub fn bessel(
+pub fn design_bessel(
     order: usize,
     cutoff_frequency: f64,
     filter_type: FilterType,
@@ -79,7 +79,7 @@ fn reverse_bessel_polynomial(order: usize) -> DVector<f64> {
     coeffs
 }
 
-pub fn chebyshev1(
+pub fn design_chebyshev1(
     order: usize,
     cutoff_frequency: f64,
     ripple_db: f64,
@@ -162,7 +162,7 @@ pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
     }
 }
 
-pub fn chebyshev2(
+pub fn design_chebyshev2(
     order: usize,
     cutoff_frequency: f64,
     ripple_db: f64,
@@ -239,22 +239,22 @@ mod tests {
     #[test]
     fn test_butterworth_low_pass() {
         // 1st order: (s + 1)
-        let tf = butter(1, 1.0, FilterType::LowPass);
+        let tf = design_butter(1, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
 
         // 2nd order: (s^2 + sqrt(2)s + 1)
-        let tf = butter(2, 1.0, FilterType::LowPass);
+        let tf = design_butter(2, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
 
         // 3rd order: (s + 1)(s^2 + s + 1)
-        let tf = butter(3, 1.0, FilterType::LowPass);
+        let tf = design_butter(3, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
 
         // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
-        let tf = butter(4, 1.0, FilterType::LowPass);
+        let tf = design_butter(4, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(
             tf.den,
@@ -272,30 +272,30 @@ mod tests {
     #[test]
     fn test_butterworth_high_pass() {
         // 1st order: (s + 1)
-        let tf = butter(1, 1.0, FilterType::HighPass);
+        let tf = design_butter(1, 1.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
 
         // 2nd order: (s^2 + sqrt(2)s + 1)
-        let tf = butter(2, 1.0, FilterType::HighPass);
+        let tf = design_butter(2, 1.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, f64::sqrt(2.0), 1.0]);
 
-        let tf = butter(2, 10.0, FilterType::HighPass);
+        let tf = design_butter(2, 10.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 14.142135623730951, 100.0]);
 
         // 3rd order: (s + 1)(s^2 + s + 1)
-        let tf = butter(3, 1.0, FilterType::HighPass);
+        let tf = design_butter(3, 1.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 2.0, 2.0, 1.0]);
 
-        let tf = butter(3, 10.0, FilterType::HighPass);
+        let tf = design_butter(3, 10.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 20.0, 200.0, 1000.0]);
 
         // 4th order: (s^2 + sqrt(2 - sqrt(2))s + 1)(s^2 + sqrt(2 + sqrt(2))s + 1)
-        let tf = butter(4, 1.0, FilterType::HighPass);
+        let tf = design_butter(4, 1.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
         assert_relative_eq!(
             tf.den,
@@ -309,7 +309,7 @@ mod tests {
             epsilon = 1e-14
         );
 
-        let tf = butter(4, 10.0, FilterType::HighPass);
+        let tf = design_butter(4, 10.0, FilterType::HighPass);
         assert_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0, 0.0]);
         assert_relative_eq!(
             tf.den,
@@ -325,23 +325,23 @@ mod tests {
 
     #[test]
     fn test_bessel_low_pass() {
-        let tf = bessel(1, 1.0, FilterType::LowPass);
+        let tf = design_bessel(1, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![1.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 1.0]);
 
-        let tf = bessel(2, 1.0, FilterType::LowPass);
+        let tf = design_bessel(2, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![3.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 3.0, 3.0]);
 
-        let tf = bessel(3, 1.0, FilterType::LowPass);
+        let tf = design_bessel(3, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![15.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 6.0, 15.0, 15.0]);
 
-        let tf = bessel(4, 1.0, FilterType::LowPass);
+        let tf = design_bessel(4, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![105.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 10.0, 45.0, 105.0, 105.0]);
 
-        let tf = bessel(5, 1.0, FilterType::LowPass);
+        let tf = design_bessel(5, 1.0, FilterType::LowPass);
         assert_eq!(tf.num, dvector![945.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 15.0, 105.0, 420.0, 945.0, 945.0]);
     }
@@ -366,18 +366,18 @@ mod tests {
 
     #[test]
     fn test_chebyshev1_low_pass() {
-        let tf = chebyshev1(1, 100.0, 1.0, FilterType::LowPass);
+        let tf = design_chebyshev1(1, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![196.52267283602717]);
         assert_relative_eq!(tf.den, dvector![1.0, 196.52267283602717]);
 
-        let tf = chebyshev1(2, 100.0, 1.0, FilterType::LowPass);
+        let tf = design_chebyshev1(2, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![9826.133641801356]);
         assert_relative_eq!(
             tf.den,
             dvector![1.0, 109.77343285639276, 11025.103280538484]
         );
 
-        let tf = chebyshev1(3, 100.0, 1.0, FilterType::LowPass);
+        let tf = design_chebyshev1(3, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![491306.6820900678]);
         assert_relative_eq!(
             tf.den,
@@ -385,7 +385,7 @@ mod tests {
             epsilon = 1e-9
         );
 
-        let tf = chebyshev1(4, 90.0, 0.1, FilterType::LowPass);
+        let tf = design_chebyshev1(4, 90.0, 0.1, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![53736256.63180374], epsilon = 1e-7);
         assert_relative_eq!(
             tf.den,
@@ -398,15 +398,15 @@ mod tests {
             ]
         );
 
-        let tf = chebyshev1(1, 100.0, 3.0, FilterType::LowPass);
+        let tf = design_chebyshev1(1, 100.0, 3.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![100.23772930076005]);
         assert_relative_eq!(tf.den, dvector![1.0, 100.23772930076005]);
 
-        let tf = chebyshev1(2, 100.0, 3.0, FilterType::LowPass);
+        let tf = design_chebyshev1(2, 100.0, 3.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![5011.886465038001], epsilon = 1e-11);
         assert_relative_eq!(tf.den, dvector![1.0, 64.48996513028668, 7079.477801252795]);
 
-        let tf = chebyshev1(3, 100.0, 3.0, FilterType::LowPass);
+        let tf = design_chebyshev1(3, 100.0, 3.0, FilterType::LowPass);
         assert_relative_eq!(tf.num, dvector![250594.32325190006], epsilon = 1e-9);
         assert_relative_eq!(
             tf.den,
@@ -422,15 +422,15 @@ mod tests {
 
     #[test]
     fn test_chebyshev1_high_pass() {
-        let tf = chebyshev1(1, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev1(1, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 50.88471399095875]);
 
-        let tf = chebyshev1(2, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev1(2, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![0.8912509381337455, 0.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 99.56680682544251, 9070.20981622186]);
 
-        let tf = chebyshev1(3, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev1(3, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
         assert_relative_eq!(
             tf.den,
@@ -438,7 +438,7 @@ mod tests {
             epsilon = 1e-8
         );
 
-        let tf = chebyshev1(4, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev1(4, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(
             tf.num,
             dvector![0.8912509381337455, 0.0, 0.0, 0.0, 0.0],
@@ -456,11 +456,11 @@ mod tests {
             epsilon = 1e-7
         );
 
-        let tf = chebyshev1(1, 100.0, 3.0, FilterType::HighPass);
+        let tf = design_chebyshev1(1, 100.0, 3.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 99.76283451109836], epsilon = 1e-13);
 
-        let tf = chebyshev1(2, 100.0, 3.0, FilterType::HighPass);
+        let tf = design_chebyshev1(2, 100.0, 3.0, FilterType::HighPass);
         assert_relative_eq!(
             tf.num,
             dvector![0.7079457843841378, 0.0, 0.0],
@@ -472,7 +472,7 @@ mod tests {
             epsilon = 1e-11
         );
 
-        let tf = chebyshev1(3, 100.0, 3.0, FilterType::HighPass);
+        let tf = design_chebyshev1(3, 100.0, 3.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0, 0.0, 0.0]);
         assert_relative_eq!(
             tf.den,
@@ -488,13 +488,13 @@ mod tests {
 
     #[test]
     fn test_chebyshev2_low_pass() {
-        let tf = chebyshev2(1, 100.0, 1.0, FilterType::LowPass);
+        let tf = design_chebyshev2(1, 100.0, 1.0, FilterType::LowPass);
         println!("{:?}", tf.num);
         println!("{:?}", tf.den);
         assert_relative_eq!(tf.num, dvector![196.52267283602717]);
         assert_relative_eq!(tf.den, dvector![1.0, 196.52267283602717]);
 
-        let tf = chebyshev2(2, 100.0, 1.0, FilterType::LowPass);
+        let tf = design_chebyshev2(2, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(
             tf.num,
             dvector![0.8912509381337451, 0.0, 17825.018762674903],
@@ -502,7 +502,7 @@ mod tests {
         );
         assert_relative_eq!(tf.den, dvector![1.0, 62.26482262384244, 17825.01876267491]);
 
-        let tf = chebyshev2(3, 100.0, 1.0, FilterType::LowPass);
+        let tf = design_chebyshev2(3, 100.0, 1.0, FilterType::LowPass);
         assert_relative_eq!(
             tf.num,
             dvector![589.5680185080812, 0.0, 7860906.913441084],
@@ -517,18 +517,18 @@ mod tests {
 
     #[test]
     fn test_chebyshev2_high_pass() {
-        let tf = chebyshev2(1, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev2(1, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0]);
         assert_relative_eq!(tf.den, dvector![1.0, 50.88471399], epsilon = 1e-9);
 
-        let tf = chebyshev2(2, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev2(2, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0, 5000.0],);
         assert_relative_eq!(
             tf.den,
             dvector![1.0, 34.931140018894816, 5610.0922715098195]
         );
 
-        let tf = chebyshev2(3, 100.0, 1.0, FilterType::HighPass);
+        let tf = design_chebyshev2(3, 100.0, 1.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0, 7500.0, 0.0]);
         assert_relative_eq!(
             tf.den,
@@ -541,7 +541,7 @@ mod tests {
             epsilon = 1e-8
         );
 
-        let tf = chebyshev2(3, 100.0, 2.0, FilterType::HighPass);
+        let tf = design_chebyshev2(3, 100.0, 2.0, FilterType::HighPass);
         assert_relative_eq!(tf.num, dvector![1.0, 0.0, 7500.0, 0.0]);
         assert_relative_eq!(
             tf.den,
