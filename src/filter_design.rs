@@ -2,8 +2,8 @@ use std::f64::consts::PI;
 
 use nalgebra::{dvector, stack, Complex, DVector};
 
+use crate::lti::ContinuousTransferFunction;
 use crate::math::{factorial, polynomial};
-use crate::transfer_function::ContinuousTransferFunction;
 
 pub enum FilterType {
     LowPass,

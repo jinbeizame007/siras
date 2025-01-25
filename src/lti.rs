@@ -3,6 +3,12 @@ use nalgebra::{stack, DMatrix, DVector};
 use crate::math::{characteristic_polynomial, expm};
 use crate::signal_extension::anti_symmetric_reflect_extension;
 
+pub trait LTI {
+    fn reset(&mut self);
+    fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64>;
+    fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64>;
+}
+
 #[derive(Clone, Debug)]
 pub struct ContinuousTransferFunction {
     pub num: DVector<f64>,
@@ -17,25 +23,15 @@ impl ContinuousTransferFunction {
     }
 
     pub fn reset(&mut self) {
-        self.x = DVector::zeros(self.num.len());
-    }
-
-    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
-        let mut state_space = ContinuousStateSpace::from(self.clone());
-
-        let result = state_space.filtfilt(u, t);
-        self.x = state_space.x.clone();
-
-        result
+        LTI::reset(self)
     }
 
     pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
-        let mut state_space = ContinuousStateSpace::from(self.clone());
+        LTI::simulate(self, inputs, t)
+    }
 
-        let result = state_space.simulate(inputs, t);
-        self.x = state_space.x.clone();
-
-        result
+    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
+        LTI::filtfilt(self, u, t)
     }
 
     pub fn impulse(&self, t: DVector<f64>) -> DVector<f64> {
@@ -67,6 +63,30 @@ impl From<ContinuousStateSpace> for ContinuousTransferFunction {
             characteristic_polynomial(&(a - (&b * &c))).unwrap() + den.clone() * d.add_scalar(-1.0);
 
         Self::new(num, den)
+    }
+}
+
+impl LTI for ContinuousTransferFunction {
+    fn reset(&mut self) {
+        self.x = DVector::zeros(self.num.len());
+    }
+
+    fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
+        let mut state_space = ContinuousStateSpace::from(self.clone());
+
+        let result = state_space.filtfilt(u, t);
+        self.x = state_space.x.clone();
+
+        result
+    }
+
+    fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        let mut state_space = ContinuousStateSpace::from(self.clone());
+
+        let result = state_space.simulate(inputs, t);
+        self.x = state_space.x.clone();
+
+        result
     }
 }
 
@@ -117,6 +137,41 @@ impl DiscreteTransferFunction {
     }
 
     pub fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
+        LTI::simulate(self, inputs, t)
+    }
+
+    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
+        LTI::filtfilt(self, u, t)
+    }
+}
+
+impl From<DiscreteStateSpace> for DiscreteTransferFunction {
+    fn from(state_space: DiscreteStateSpace) -> Self {
+        let a = state_space.a.clone();
+        let b = state_space.b.clone();
+        let c = state_space.c.clone();
+        let d = state_space.d.clone();
+        let dt = state_space.dt;
+
+        let o_den = characteristic_polynomial(&a);
+        let den = match o_den {
+            Some(den) => den,
+            None => DVector::from_vec(vec![1.0]),
+        };
+        let num =
+            characteristic_polynomial(&(a - (&b * &c))).unwrap() + den.clone() * d.add_scalar(-1.0);
+
+        Self::new(num, den, dt)
+    }
+}
+
+impl LTI for DiscreteTransferFunction {
+    fn reset(&mut self) {
+        self.inputs = DVector::zeros(self.inputs.len());
+        self.outputs = DVector::zeros(self.outputs.len());
+    }
+
+    fn simulate(&mut self, inputs: DVector<f64>, t: DVector<f64>) -> DVector<f64> {
         let mut output = DVector::zeros(inputs.len());
 
         for i in 0..inputs.len() {
@@ -126,7 +181,7 @@ impl DiscreteTransferFunction {
         output
     }
 
-    pub fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
+    fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64> {
         // padding
         let u_extended = anti_symmetric_reflect_extension(u.clone());
         let dt = t[1] - t[0];
@@ -148,26 +203,6 @@ impl DiscreteTransferFunction {
         let y = y_extended.rows(u.nrows(), u.nrows()).into_owned();
 
         y
-    }
-}
-
-impl From<DiscreteStateSpace> for DiscreteTransferFunction {
-    fn from(state_space: DiscreteStateSpace) -> Self {
-        let a = state_space.a.clone();
-        let b = state_space.b.clone();
-        let c = state_space.c.clone();
-        let d = state_space.d.clone();
-        let dt = state_space.dt;
-
-        let o_den = characteristic_polynomial(&a);
-        let den = match o_den {
-            Some(den) => den,
-            None => DVector::from_vec(vec![1.0]),
-        };
-        let num =
-            characteristic_polynomial(&(a - (&b * &c))).unwrap() + den.clone() * d.add_scalar(-1.0);
-
-        Self::new(num, den, dt)
     }
 }
 
