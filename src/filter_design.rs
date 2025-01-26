@@ -51,12 +51,23 @@ pub fn design_bessel(
         ),
         FilterType::HighPass => DVector::from_vec(
             (0..=order)
+                .rev()
                 .map(|k| (cutoff_frequency).powf(k as f64))
                 .collect::<Vec<_>>(),
         ),
     };
 
-    let den = den_bessel.component_mul(&den_cutoff);
+    let den = match filter_type {
+        FilterType::LowPass => den_bessel.component_mul(&den_cutoff),
+        FilterType::HighPass => DVector::from_vec(
+            den_bessel
+                .component_mul(&den_cutoff)
+                .iter()
+                .rev()
+                .cloned()
+                .collect::<Vec<f64>>(),
+        ),
+    };
     let num = match filter_type {
         FilterType::LowPass => dvector![den_bessel[den_bessel.len() - 1]],
         FilterType::HighPass => {

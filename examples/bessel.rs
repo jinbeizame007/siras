@@ -62,7 +62,7 @@ fn main() {
     let x =
         (2.0 * PI * f0 * t.clone()).map(|e| e.sin()) + (2.0 * PI * f1 * t.clone()).map(|e| e.sin());
 
-    let cutoff_high_pass = 98.0;
+    let cutoff_high_pass = 50.0;
     let cutoff_low_pass = 15.0;
 
     let alpha = 0.5;
