@@ -6,7 +6,7 @@
 
 ## Filters
 
-<details>
+<details open>
 
 <summary>Butterworth Filter</summary>
 
@@ -51,20 +51,20 @@
 
 </details>
 
-<details>
+<details open>
 <summary>FFT - IFFT</summary>
 
 <div align="center">
     <img src="media/original_signal.png" alt="siras">
 </div>
 
-FFT (time domain -> frequency domain)
+### FFT (time domain -> frequency domain)
 
 <div align="center">
     <img src="media/fft.png" alt="siras">
 </div>
 
-IFFT (frequency domain -> time domain)
+### IFFT (frequency domain -> time domain)
 
 <div align="center">
     <img src="media/reconstructed_signal.png" alt="siras">
