@@ -4,11 +4,13 @@
     <img src="media/siras.webp" alt="siras" width="45%">
 </div>
 
+# Features
+
 ## Filters
 
 <details open>
 
-<summary>Butterworth Filter</summary>
+<summary><b>Butterworth Filter</b></summary>
 
 <div align="center">
     <img src="media/butter_without_filter.png" alt="siras">
@@ -19,7 +21,7 @@
 </details>
 
 <details>
-<summary>Bessel Filter</summary>
+<summary><b>Bessel Filter</b></summary>
 
 <div align="center">
     <img src="media/bessel_without_filter.png" alt="siras">
@@ -30,7 +32,7 @@
 </details>
 
 <details>
-<summary>Chebyshev Type I Filter</summary>
+<summary><b>Chebyshev Type I Filter</b></summary>
 
 <div align="center">
     <img src="media/chebyshev1_without_filter.png" alt="siras">
@@ -41,7 +43,7 @@
 </details>
 
 <details>
-<summary>Chebyshev Type II Filter</summary>
+<summary><b>Chebyshev Type II Filter</b></summary>
 
 <div align="center">
     <img src="media/chebyshev2_without_filter.png" alt="siras">
@@ -51,8 +53,10 @@
 
 </details>
 
+## FFT
+
 <details open>
-<summary>FFT - IFFT</summary>
+<summary><b>FFT</b></summary>
 
 <div align="center">
     <img src="media/original_signal.png" alt="siras">
