@@ -3,5 +3,6 @@
 pub mod fft;
 pub mod filter_design;
 pub mod lti;
+pub mod lti_conversion;
 pub mod math;
 pub mod signal_extension;
