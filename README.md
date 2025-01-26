@@ -8,43 +8,50 @@
 
 ### Butterworth Filter
 
-![bessel_without_filter](media/bessel_without_filter.png)
-
-![bessel_with_low_pass_filter](media/bessel_with_low_pass_filter.png)
-
-![bessel_with_high_pass_filter](media/bessel_with_high_pass_filter.png)
+<div align="center">
+    <img src="media/butter_without_filter.png" alt="siras" width="80%">
+    <img src="media/butter_with_low_pass_filter.png" alt="siras" width="80%">
+    <img src="media/butter_with_high_pass_filter.png" alt="siras" width="80%">
+</div>
 
 ### Bessel Filter
 
-![bessel_without_filter](media/bessel_without_filter.png)
-
-![bessel_with_low_pass_filter](media/bessel_with_low_pass_filter.png)
-
-![bessel_with_high_pass_filter](media/bessel_with_high_pass_filter.png)
+<div align="center">
+    <img src="media/bessel_without_filter.png" alt="siras" width="80%">
+    <img src="media/bessel_with_low_pass_filter.png" alt="siras" width="80%">
+    <img src="media/bessel_with_high_pass_filter.png" alt="siras" width="80%">
+</div>
 
 ### Chebyshev Type I Filter
 
-![chebyshev1_without_filter](media/chebyshev1_without_filter.png)
-
-![chebyshev1_with_low_pass_filter](media/chebyshev1_with_low_pass_filter.png)
-
-![chebyshev1_with_high_pass_filter](media/chebyshev1_with_high_pass_filter.png)
+<div align="center">
+    <img src="media/chebyshev1_without_filter.png" alt="siras" width="80%">
+    <img src="media/chebyshev1_with_low_pass_filter.png" alt="siras" width="80%">
+    <img src="media/chebyshev1_with_high_pass_filter.png" alt="siras" width="80%">
+</div>
 
 ### Chebyshev Type II Filter
-![chebyshev2_without_filter](media/chebyshev2_without_filter.png)
 
-![chebyshev2_with_low_pass_filter](media/chebyshev2_with_low_pass_filter.png)
-
-![chebyshev2_with_high_pass_filter](media/chebyshev2_with_high_pass_filter.png)
+<div align="center">
+    <img src="media/chebyshev2_without_filter.png" alt="siras" width="80%">
+    <img src="media/chebyshev2_with_low_pass_filter.png" alt="siras" width="80%">
+    <img src="media/chebyshev2_with_high_pass_filter.png" alt="siras" width="80%">
+</div>
 
 ## FFT
 
-![original_signal](media/original_signal.png)
+<div align="center">
+    <img src="media/original_signal.png" alt="siras" width="80%">
+</div>
 
 ### FFT (time domain -> frequency domain)
 
-![fft](media/fft.png)
+<div align="center">
+    <img src="media/fft.png" alt="siras" width="80%">
+</div>
 
 ### IFFT (frequency domain -> time domain)
 
-![reconstructed_signal](media/reconstructed_signal.png)
+<div align="center">
+    <img src="media/reconstructed_signal.png" alt="siras" width="80%">
+</div>
