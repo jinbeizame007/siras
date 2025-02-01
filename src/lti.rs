@@ -2,7 +2,7 @@ use nalgebra::{stack, DMatrix, DVector};
 
 use crate::filter_design::{
     design_bessel, design_butter, design_chebyshev1, design_chebyshev2, digital_to_analog_cutoff,
-    FilterType,
+    BandType,
 };
 use crate::math::expm;
 use crate::signal_extension::anti_symmetric_reflect_extension;
@@ -28,11 +28,11 @@ impl ContinuousTransferFunction {
         Self { num, den, x }
     }
 
-    pub fn butter(order: usize, cutoff_freq: f64, filter_type: FilterType) -> Self {
+    pub fn butter(order: usize, cutoff_freq: f64, filter_type: BandType) -> Self {
         design_butter(order, cutoff_freq, filter_type)
     }
 
-    pub fn bessel(order: usize, cutoff_freq: f64, filter_type: FilterType) -> Self {
+    pub fn bessel(order: usize, cutoff_freq: f64, filter_type: BandType) -> Self {
         design_bessel(order, cutoff_freq, filter_type)
     }
 
@@ -40,7 +40,7 @@ impl ContinuousTransferFunction {
         order: usize,
         cutoff_freq: f64,
         ripple_db: f64,
-        filter_type: FilterType,
+        filter_type: BandType,
     ) -> Self {
         design_chebyshev1(order, cutoff_freq, ripple_db, filter_type)
     }
@@ -49,7 +49,7 @@ impl ContinuousTransferFunction {
         order: usize,
         cutoff_freq: f64,
         ripple_db: f64,
-        filter_type: FilterType,
+        filter_type: BandType,
     ) -> Self {
         design_chebyshev2(order, cutoff_freq, ripple_db, filter_type)
     }
@@ -127,13 +127,13 @@ impl DiscreteTransferFunction {
         }
     }
 
-    pub fn butter(order: usize, cutoff_freq: f64, dt: f64, filter_type: FilterType) -> Self {
+    pub fn butter(order: usize, cutoff_freq: f64, dt: f64, filter_type: BandType) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
         design_butter(order, normalized_cutoff_freq, filter_type).to_discrete(dt, DEFAULT_ALPHA)
     }
 
-    pub fn bessel(order: usize, cutoff_freq: f64, dt: f64, filter_type: FilterType) -> Self {
+    pub fn bessel(order: usize, cutoff_freq: f64, dt: f64, filter_type: BandType) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
         design_bessel(order, normalized_cutoff_freq, filter_type).to_discrete(dt, DEFAULT_ALPHA)
@@ -144,7 +144,7 @@ impl DiscreteTransferFunction {
         cutoff_freq: f64,
         ripple_db: f64,
         dt: f64,
-        filter_type: FilterType,
+        filter_type: BandType,
     ) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
@@ -157,7 +157,7 @@ impl DiscreteTransferFunction {
         cutoff_freq: f64,
         ripple_db: f64,
         dt: f64,
-        filter_type: FilterType,
+        filter_type: BandType,
     ) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);

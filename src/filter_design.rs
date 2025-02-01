@@ -5,7 +5,7 @@ use nalgebra::{dvector, stack, Complex, DVector};
 use crate::lti::ContinuousTransferFunction;
 use crate::math::{factorial, polynomial};
 
-pub enum FilterType {
+pub enum BandType {
     LowPass,
     HighPass,
 }
@@ -13,11 +13,11 @@ pub enum FilterType {
 pub fn design_butter(
     order: usize,
     cutoff_freq: f64,
-    filter_type: FilterType,
+    filter_type: BandType,
 ) -> ContinuousTransferFunction {
     let num = match filter_type {
-        FilterType::LowPass => dvector![cutoff_freq.powf(order as f64)],
-        FilterType::HighPass => stack![dvector![1.0]; DVector::zeros(order)],
+        BandType::LowPass => dvector![cutoff_freq.powf(order as f64)],
+        BandType::HighPass => stack![dvector![1.0]; DVector::zeros(order)],
     };
 
     let thetas: Vec<f64> = (1..=order)
@@ -39,17 +39,17 @@ pub fn design_butter(
 pub fn design_bessel(
     order: usize,
     cutoff_freq: f64,
-    filter_type: FilterType,
+    filter_type: BandType,
 ) -> ContinuousTransferFunction {
     let den_bessel = reverse_bessel_polynomial(order);
     let den_cutoff = match filter_type {
-        FilterType::LowPass => DVector::from_vec(
+        BandType::LowPass => DVector::from_vec(
             (0..=order)
                 .rev()
                 .map(|k| (1.0 / cutoff_freq).powf(k as f64))
                 .collect::<Vec<_>>(),
         ),
-        FilterType::HighPass => DVector::from_vec(
+        BandType::HighPass => DVector::from_vec(
             (0..=order)
                 .rev()
                 .map(|k| (cutoff_freq).powf(k as f64))
@@ -58,8 +58,8 @@ pub fn design_bessel(
     };
 
     let den = match filter_type {
-        FilterType::LowPass => den_bessel.component_mul(&den_cutoff),
-        FilterType::HighPass => DVector::from_vec(
+        BandType::LowPass => den_bessel.component_mul(&den_cutoff),
+        BandType::HighPass => DVector::from_vec(
             den_bessel
                 .component_mul(&den_cutoff)
                 .iter()
@@ -69,8 +69,8 @@ pub fn design_bessel(
         ),
     };
     let num = match filter_type {
-        FilterType::LowPass => dvector![den_bessel[den_bessel.len() - 1]],
-        FilterType::HighPass => {
+        BandType::LowPass => dvector![den_bessel[den_bessel.len() - 1]],
+        BandType::HighPass => {
             stack![dvector![den_bessel[den_bessel.len() - 1]]; DVector::zeros(order)]
         }
     };
@@ -94,21 +94,21 @@ pub fn design_chebyshev1(
     order: usize,
     cutoff_freq: f64,
     ripple_db: f64,
-    filter_type: FilterType,
+    filter_type: BandType,
 ) -> ContinuousTransferFunction {
     let ripple = f64::sqrt(10.0_f64.powf(ripple_db / 10.0) - 1.0);
     let mut num = match filter_type {
-        FilterType::LowPass => {
+        BandType::LowPass => {
             dvector![cutoff_freq.powf(order as f64) / (2.0_f64.powf(order as f64 - 1.0) * ripple)]
         }
-        FilterType::HighPass => {
+        BandType::HighPass => {
             stack![dvector![1.0 / (2.0_f64.powf(order as f64 - 1.0) * ripple)]; DVector::zeros(order)]
         }
     };
 
     let mut poles: DVector<Complex<f64>> = DVector::zeros(order);
     match filter_type {
-        FilterType::LowPass => {
+        BandType::LowPass => {
             for k in 1..=order {
                 let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
                 poles[k - 1] = cutoff_freq
@@ -120,7 +120,7 @@ pub fn design_chebyshev1(
                     )
             }
         }
-        FilterType::HighPass => {
+        BandType::HighPass => {
             for k in 1..=order {
                 let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
                 poles[k - 1] = Complex::new(
@@ -135,10 +135,10 @@ pub fn design_chebyshev1(
         }
     }
     let den = match filter_type {
-        FilterType::LowPass => {
+        BandType::LowPass => {
             DVector::from_vec(polynomial(poles).iter().map(|e| e.re).collect::<Vec<_>>())
         }
-        FilterType::HighPass => {
+        BandType::HighPass => {
             let den = DVector::from_vec(
                 polynomial(poles)
                     .iter()
@@ -177,7 +177,7 @@ pub fn design_chebyshev2(
     order: usize,
     cutoff_freq: f64,
     ripple_db: f64,
-    filter_type: FilterType,
+    filter_type: BandType,
 ) -> ContinuousTransferFunction {
     let ripple = 1.0 / f64::sqrt(10.0_f64.powf(ripple_db / 10.0) - 1.0);
 
@@ -199,11 +199,11 @@ pub fn design_chebyshev2(
     let mut poles_num = DVector::from_vec(poles_num_vec);
 
     match filter_type {
-        FilterType::LowPass => {
+        BandType::LowPass => {
             poles_den = poles_den.map(|e| e * cutoff_freq);
             poles_num = poles_num.map(|e| e * cutoff_freq);
         }
-        FilterType::HighPass => {
+        BandType::HighPass => {
             poles_den = poles_den.map(|e| cutoff_freq / e);
             poles_num = poles_num.map(|e| cutoff_freq / e);
         }
@@ -224,10 +224,10 @@ pub fn design_chebyshev2(
 
     // Normalize the numerator
     match filter_type {
-        FilterType::LowPass => {
+        BandType::LowPass => {
             num *= den[den.len() - 1] / num[num.len() - 1];
         }
-        FilterType::HighPass => {
+        BandType::HighPass => {
             num /= num[0];
             if order % 2 == 1 {
                 num = stack![num; dvector![0.0]];
@@ -260,7 +260,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_butter(order, cutoff_freq, FilterType::LowPass);
+        let tf = design_butter(order, cutoff_freq, BandType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -279,7 +279,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_butter(order, cutoff_freq, FilterType::HighPass);
+        let tf = design_butter(order, cutoff_freq, BandType::HighPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -297,7 +297,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_bessel(order, cutoff_freq, FilterType::LowPass);
+        let tf = design_bessel(order, cutoff_freq, BandType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -329,7 +329,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev1(order, cutoff_freq, ripple_db, FilterType::LowPass);
+        let tf = design_chebyshev1(order, cutoff_freq, ripple_db, BandType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -350,7 +350,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev1(order, cutoff_freq, ripple_db, FilterType::HighPass);
+        let tf = design_chebyshev1(order, cutoff_freq, ripple_db, BandType::HighPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -367,7 +367,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev2(order, cutoff_freq, ripple_db, FilterType::LowPass);
+        let tf = design_chebyshev2(order, cutoff_freq, ripple_db, BandType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -385,7 +385,7 @@ mod tests {
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev2(order, cutoff_freq, ripple_db, FilterType::HighPass);
+        let tf = design_chebyshev2(order, cutoff_freq, ripple_db, BandType::HighPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }

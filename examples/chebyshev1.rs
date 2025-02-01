@@ -5,7 +5,7 @@ use nalgebra::DVector;
 use plotters::prelude::*;
 
 extern crate siras;
-use siras::filter_design::FilterType;
+use siras::filter_design::BandType;
 use siras::lti::DiscreteTransferFunction;
 
 fn plot(
@@ -64,20 +64,20 @@ fn main() {
     let cutoff_freq_high_pass = 98.0;
     let cutoff_freq_low_pass = 15.0;
 
-    let signal_with_high_pass_filter = DiscreteTransferFunction::chebyshev1(
+    let high_passed_signal = DiscreteTransferFunction::chebyshev1(
         order,
         cutoff_freq_high_pass,
         ripple,
         dt,
-        FilterType::HighPass,
+        BandType::HighPass,
     )
     .filtfilt(&signal, &t);
-    let signal_with_low_pass_filter = DiscreteTransferFunction::chebyshev1(
+    let low_passed_signal = DiscreteTransferFunction::chebyshev1(
         order,
         cutoff_freq_low_pass,
         ripple,
         dt,
-        FilterType::LowPass,
+        BandType::LowPass,
     )
     .filtfilt(&signal, &t);
 
@@ -98,7 +98,7 @@ fn main() {
     .unwrap();
     plot(
         &t,
-        &signal_with_low_pass_filter,
+        &low_passed_signal,
         (1200, 600),
         &format!("{}/chebyshev1_with_low_pass_filter.png", plot_dir),
         "with low pass filter",
@@ -108,7 +108,7 @@ fn main() {
     .unwrap();
     plot(
         &t,
-        &signal_with_high_pass_filter,
+        &high_passed_signal,
         (1200, 600),
         &format!("{}/chebyshev1_with_high_pass_filter.png", plot_dir),
         "with high pass filter",

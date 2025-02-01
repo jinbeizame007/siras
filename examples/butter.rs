@@ -5,7 +5,7 @@ use nalgebra::DVector;
 use plotters::prelude::*;
 
 extern crate siras;
-use siras::filter_design::FilterType;
+use siras::filter_design::BandType;
 use siras::lti::DiscreteTransferFunction;
 
 fn plot(
@@ -60,14 +60,13 @@ fn main() {
 
     let order = 4;
     let dt = 1.0 / sample_rate as f64;
-    let cutoff_freq_high_pass = 20.0;
-    let cutoff_freq_low_pass = 20.0;
+    let cutoff_freq = 20.0;
 
-    let signal_with_high_pass_filter =
-        DiscreteTransferFunction::butter(order, cutoff_freq_high_pass, dt, FilterType::HighPass)
+    let high_passed_signal =
+        DiscreteTransferFunction::butter(order, cutoff_freq, dt, BandType::HighPass)
             .filtfilt(&signal, &t);
-    let signal_with_low_pass_filter =
-        DiscreteTransferFunction::butter(order, cutoff_freq_low_pass, dt, FilterType::LowPass)
+    let low_passed_signal =
+        DiscreteTransferFunction::butter(order, cutoff_freq, dt, BandType::LowPass)
             .filtfilt(&signal, &t);
 
     let plot_dir = "examples/plots";
@@ -87,7 +86,7 @@ fn main() {
     .unwrap();
     plot(
         &t,
-        &signal_with_low_pass_filter,
+        &low_passed_signal,
         (1200, 600),
         &format!("{}/butter_with_low_pass_filter.png", plot_dir),
         "with low pass filter",
@@ -97,7 +96,7 @@ fn main() {
     .unwrap();
     plot(
         &t,
-        &signal_with_high_pass_filter,
+        &high_passed_signal,
         (1200, 600),
         &format!("{}/butter_with_high_pass_filter.png", plot_dir),
         "with high pass filter",
