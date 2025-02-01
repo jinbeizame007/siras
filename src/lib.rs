@@ -6,3 +6,4 @@ pub mod lti;
 pub mod lti_conversion;
 pub mod math;
 pub mod signal_extension;
+pub mod signal_generator;

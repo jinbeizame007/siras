@@ -7,6 +7,7 @@ use plotters::prelude::*;
 extern crate siras;
 use siras::filter_design::BandType;
 use siras::lti::DiscreteTransferFunction;
+use siras::signal_generator::generate_sine_wave;
 
 fn plot(
     x: &DVector<f64>,
@@ -55,8 +56,7 @@ fn main() {
 
     let freq1 = 10.0;
     let freq2 = 100.0;
-    let signal = (2.0 * PI * freq1 * t.clone()).map(|e| e.sin())
-        + (2.0 * PI * freq2 * t.clone()).map(|e| e.sin());
+    let signal = generate_sine_wave(&t, freq1) + generate_sine_wave(&t, freq2);
 
     let order = 4;
     let ripple = 0.1;
