@@ -50,15 +50,16 @@ fn plot(
 }
 
 fn main() {
+    let sample_rate = 32000;
+    let t = DVector::from_fn(sample_rate, |i, _| i as f64 / sample_rate as f64);
+
     let freq1 = 10.0;
     let freq2 = 100.0;
-    let sample_rate = 32000;
-    let dt = 1.0 / sample_rate as f64;
-    let order = 4;
-    let t = DVector::from_fn(sample_rate, |i, _| i as f64 / sample_rate as f64);
     let signal = (2.0 * PI * freq1 * t.clone()).map(|e| e.sin())
         + (2.0 * PI * freq2 * t.clone()).map(|e| e.sin());
 
+    let order = 4;
+    let dt = 1.0 / sample_rate as f64;
     let cutoff_freq_high_pass = 50.0;
     let cutoff_freq_low_pass = 15.0;
 
