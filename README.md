@@ -4,6 +4,31 @@
     <img src="media/siras.webp" alt="siras" width="45%">
 </div>
 
+```rust
+use nalgebra::DVector;
+
+extern crate siras;
+use siras::filter_design::BandType;
+use siras::lti::DiscreteTransferFunction;
+use siras::signal_generator::generate_sine_wave;
+
+fn main() {
+    let sample_rate = 32000;
+    let t = DVector::from_fn(sample_rate, |i, _| i as f64 / sample_rate as f64);
+
+    let freq1 = 10.0;
+    let freq2 = 100.0;
+    let signal = generate_sine_wave(&t, freq1) + generate_sine_wave(&t, freq2);
+
+    let order = 4;
+    let dt = 1.0 / sample_rate as f64;
+    let cutoff_freq = 20.0;
+
+    let filter = DiscreteTransferFunction::butter(order, cutoff_freq, dt, BandType::LowPass);
+    let filtered_signal = filter.filtfilt(&signal, &t);
+}
+```
+
 # Features
 
 ## Filters
