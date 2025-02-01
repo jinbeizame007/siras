@@ -56,11 +56,8 @@ fn main() {
     let dt = 1.0 / sample_rate as f64;
     let order = 4;
     let ripple = 20.0;
-    let t = DVector::from_iterator(
-        sample_rate,
-        (0..sample_rate).map(|i| i as f64 / sample_rate as f64),
-    );
-    let x = (2.0 * PI * freq1 * t.clone()).map(|e| e.sin())
+    let t = DVector::from_fn(sample_rate, |i, _| i as f64 / sample_rate as f64);
+    let signal = (2.0 * PI * freq1 * t.clone()).map(|e| e.sin())
         + (2.0 * PI * freq2 * t.clone()).map(|e| e.sin());
 
     let cutoff_freq_high_pass = 50.0;
@@ -75,7 +72,7 @@ fn main() {
         alpha,
         FilterType::HighPass,
     )
-    .filtfilt(&x, &t);
+    .filtfilt(&signal, &t);
     let signal_with_low_pass_filter = DiscreteTransferFunction::chebyshev2(
         order,
         cutoff_freq_low_pass,
@@ -84,7 +81,7 @@ fn main() {
         alpha,
         FilterType::LowPass,
     )
-    .filtfilt(&x, &t);
+    .filtfilt(&signal, &t);
 
     let plot_dir = "examples/plots";
     if !std::path::Path::new(plot_dir).exists() {
@@ -93,7 +90,7 @@ fn main() {
 
     plot(
         &t,
-        &x,
+        &signal,
         (1200, 600),
         &format!("{}/chebyshev2_without_filter.png", plot_dir),
         "without filter",
