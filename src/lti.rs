@@ -26,30 +26,30 @@ impl ContinuousTransferFunction {
         Self { num, den, x }
     }
 
-    pub fn butter(order: usize, cutoff_frequency: f64, filter_type: FilterType) -> Self {
-        design_butter(order, cutoff_frequency, filter_type)
+    pub fn butter(order: usize, cutoff_freq: f64, filter_type: FilterType) -> Self {
+        design_butter(order, cutoff_freq, filter_type)
     }
 
-    pub fn bessel(order: usize, cutoff_frequency: f64, filter_type: FilterType) -> Self {
-        design_bessel(order, cutoff_frequency, filter_type)
+    pub fn bessel(order: usize, cutoff_freq: f64, filter_type: FilterType) -> Self {
+        design_bessel(order, cutoff_freq, filter_type)
     }
 
     pub fn chebyshev1(
         order: usize,
-        cutoff_frequency: f64,
+        cutoff_freq: f64,
         ripple_db: f64,
         filter_type: FilterType,
     ) -> Self {
-        design_chebyshev1(order, cutoff_frequency, ripple_db, filter_type)
+        design_chebyshev1(order, cutoff_freq, ripple_db, filter_type)
     }
 
     pub fn chebyshev2(
         order: usize,
-        cutoff_frequency: f64,
+        cutoff_freq: f64,
         ripple_db: f64,
         filter_type: FilterType,
     ) -> Self {
-        design_chebyshev2(order, cutoff_frequency, ripple_db, filter_type)
+        design_chebyshev2(order, cutoff_freq, ripple_db, filter_type)
     }
 
     pub fn reset(&mut self) {
@@ -127,57 +127,53 @@ impl DiscreteTransferFunction {
 
     pub fn butter(
         order: usize,
-        cutoff_frequency: f64,
+        cutoff_freq: f64,
         dt: f64,
         alpha: f64,
         filter_type: FilterType,
     ) -> Self {
-        let sample_frequency = 1.0 / dt;
-        let normalized_cutoff_frequency =
-            digital_to_analog_cutoff(cutoff_frequency, sample_frequency);
-        design_butter(order, normalized_cutoff_frequency, filter_type).to_discrete(dt, alpha)
+        let sample_rate = 1.0 / dt;
+        let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
+        design_butter(order, normalized_cutoff_freq, filter_type).to_discrete(dt, alpha)
     }
 
     pub fn bessel(
         order: usize,
-        cutoff_frequency: f64,
+        cutoff_freq: f64,
         dt: f64,
         alpha: f64,
         filter_type: FilterType,
     ) -> Self {
-        let sample_frequency = 1.0 / dt;
-        let normalized_cutoff_frequency =
-            digital_to_analog_cutoff(cutoff_frequency, sample_frequency);
-        design_bessel(order, normalized_cutoff_frequency, filter_type).to_discrete(dt, alpha)
+        let sample_rate = 1.0 / dt;
+        let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
+        design_bessel(order, normalized_cutoff_freq, filter_type).to_discrete(dt, alpha)
     }
 
     pub fn chebyshev1(
         order: usize,
-        cutoff_frequency: f64,
+        cutoff_freq: f64,
         ripple_db: f64,
         dt: f64,
         alpha: f64,
         filter_type: FilterType,
     ) -> Self {
-        let sample_frequency = 1.0 / dt;
-        let normalized_cutoff_frequency =
-            digital_to_analog_cutoff(cutoff_frequency, sample_frequency);
-        design_chebyshev1(order, normalized_cutoff_frequency, ripple_db, filter_type)
+        let sample_rate = 1.0 / dt;
+        let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
+        design_chebyshev1(order, normalized_cutoff_freq, ripple_db, filter_type)
             .to_discrete(dt, alpha)
     }
 
     pub fn chebyshev2(
         order: usize,
-        cutoff_frequency: f64,
+        cutoff_freq: f64,
         ripple_db: f64,
         dt: f64,
         alpha: f64,
         filter_type: FilterType,
     ) -> Self {
-        let sample_frequency = 1.0 / dt;
-        let normalized_cutoff_frequency =
-            digital_to_analog_cutoff(cutoff_frequency, sample_frequency);
-        design_chebyshev2(order, normalized_cutoff_frequency, ripple_db, filter_type)
+        let sample_rate = 1.0 / dt;
+        let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
+        design_chebyshev2(order, normalized_cutoff_freq, ripple_db, filter_type)
             .to_discrete(dt, alpha)
     }
 
@@ -474,22 +470,22 @@ mod tests {
 
     #[test]
     fn test_filtfilt_continuous_transfer_function() {
-        let f0 = 10.0;
-        let f1 = 100.0;
-        let sample_frequency = 32000;
+        let freq1 = 10.0;
+        let freq2 = 100.0;
+        let sample_rate = 32000;
         let t = DVector::from_iterator(
-            sample_frequency + 1,
-            (0..=sample_frequency).map(|i| i as f64 / sample_frequency as f64),
+            sample_rate + 1,
+            (0..=sample_rate).map(|i| i as f64 / sample_rate as f64),
         );
-        let low_frequency_sin_wave = (2.0 * PI * f0 * t.clone()).map(|e| e.sin());
-        let high_frequency_sin_wave = (2.0 * PI * f1 * t.clone()).map(|e| e.sin());
+        let low_frequency_sin_wave = (2.0 * PI * freq1 * t.clone()).map(|e| e.sin());
+        let high_frequency_sin_wave = (2.0 * PI * freq2 * t.clone()).map(|e| e.sin());
         let x = low_frequency_sin_wave.clone() + high_frequency_sin_wave;
 
         // Chebyshev Type I Filter
         // let order = 4;
-        // let cutoff_frequency = 90.0;
+        // let cutoff_freq = 90.0;
         // let ripple = 0.1;
-        // let mut tf = chebyshev1(order, cutoff_frequency, ripple);
+        // let mut tf = chebyshev1(order, cutoff_freq, ripple);
         let num = dvector![53736256.63180374];
         let den = dvector![
             1.0,

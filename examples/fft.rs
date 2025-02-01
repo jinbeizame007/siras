@@ -53,11 +53,11 @@ fn main() {
     let frequency1 = 100.0;
     let amplitude0 = 1.0;
     let amplitude1 = 0.5;
-    let sample_frequency = 1024;
-    let dt = 1.0 / sample_frequency as f64;
+    let sample_rate = 1024;
+    let dt = 1.0 / sample_rate as f64;
     let t = DVector::from_iterator(
-        sample_frequency,
-        (0..sample_frequency).map(|i| i as f64 / sample_frequency as f64),
+        sample_rate,
+        (0..sample_rate).map(|i| i as f64 / sample_rate as f64),
     );
     let signal = (2.0 * PI * frequency0 * t.clone()).map(|e| amplitude0 * e.sin())
         + (2.0 * PI * frequency1 * t.clone()).map(|e| amplitude1 * e.sin());
@@ -67,7 +67,7 @@ fn main() {
 
     let amplitudes = spectrums
         .rows(0, 200)
-        .map(|e| e.abs() / (sample_frequency as f64 / 2.0));
+        .map(|e| e.abs() / (sample_rate as f64 / 2.0));
     let freqencies: DVector<f64> = fftfreq(t.len(), dt).rows(0, 200).into();
 
     let plot_dir = "examples/plots";

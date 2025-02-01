@@ -50,28 +50,38 @@ fn plot(
 }
 
 fn main() {
-    let f0 = 10.0;
-    let f1 = 100.0;
-    let sample_frequency = 32000;
-    let dt = 1.0 / sample_frequency as f64;
+    let freq1 = 10.0;
+    let freq2 = 100.0;
+    let sample_rate = 32000;
+    let dt = 1.0 / sample_rate as f64;
     let order = 4;
     let t = DVector::from_iterator(
-        sample_frequency,
-        (0..sample_frequency).map(|i| i as f64 / sample_frequency as f64),
+        sample_rate,
+        (0..sample_rate).map(|i| i as f64 / sample_rate as f64),
     );
-    let x =
-        (2.0 * PI * f0 * t.clone()).map(|e| e.sin()) + (2.0 * PI * f1 * t.clone()).map(|e| e.sin());
+    let x = (2.0 * PI * freq1 * t.clone()).map(|e| e.sin())
+        + (2.0 * PI * freq2 * t.clone()).map(|e| e.sin());
 
-    let cutoff_high_pass = 50.0;
-    let cutoff_low_pass = 15.0;
+    let cutoff_freq_high_pass = 50.0;
+    let cutoff_freq_low_pass = 15.0;
 
     let alpha = 0.5;
-    let signal_with_high_pass_filter =
-        DiscreteTransferFunction::bessel(order, cutoff_high_pass, dt, alpha, FilterType::HighPass)
-            .filtfilt(&x, &t);
-    let signal_with_low_pass_filter =
-        DiscreteTransferFunction::bessel(order, cutoff_low_pass, dt, alpha, FilterType::LowPass)
-            .filtfilt(&x, &t);
+    let signal_with_high_pass_filter = DiscreteTransferFunction::bessel(
+        order,
+        cutoff_freq_high_pass,
+        dt,
+        alpha,
+        FilterType::HighPass,
+    )
+    .filtfilt(&x, &t);
+    let signal_with_low_pass_filter = DiscreteTransferFunction::bessel(
+        order,
+        cutoff_freq_low_pass,
+        dt,
+        alpha,
+        FilterType::LowPass,
+    )
+    .filtfilt(&x, &t);
 
     let plot_dir = "examples/plots";
     if !std::path::Path::new(plot_dir).exists() {

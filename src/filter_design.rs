@@ -12,11 +12,11 @@ pub enum FilterType {
 
 pub fn design_butter(
     order: usize,
-    cutoff_frequency: f64,
+    cutoff_freq: f64,
     filter_type: FilterType,
 ) -> ContinuousTransferFunction {
     let num = match filter_type {
-        FilterType::LowPass => dvector![cutoff_frequency.powf(order as f64)],
+        FilterType::LowPass => dvector![cutoff_freq.powf(order as f64)],
         FilterType::HighPass => stack![dvector![1.0]; DVector::zeros(order)],
     };
 
@@ -26,7 +26,7 @@ pub fn design_butter(
 
     let poles: Vec<Complex<f64>> = thetas
         .iter()
-        .map(|theta| cutoff_frequency * Complex::new(theta.cos(), theta.sin()))
+        .map(|theta| cutoff_freq * Complex::new(theta.cos(), theta.sin()))
         .filter(|p| p.re <= 0.0)
         .collect();
 
@@ -38,7 +38,7 @@ pub fn design_butter(
 
 pub fn design_bessel(
     order: usize,
-    cutoff_frequency: f64,
+    cutoff_freq: f64,
     filter_type: FilterType,
 ) -> ContinuousTransferFunction {
     let den_bessel = reverse_bessel_polynomial(order);
@@ -46,13 +46,13 @@ pub fn design_bessel(
         FilterType::LowPass => DVector::from_vec(
             (0..=order)
                 .rev()
-                .map(|k| (1.0 / cutoff_frequency).powf(k as f64))
+                .map(|k| (1.0 / cutoff_freq).powf(k as f64))
                 .collect::<Vec<_>>(),
         ),
         FilterType::HighPass => DVector::from_vec(
             (0..=order)
                 .rev()
-                .map(|k| (cutoff_frequency).powf(k as f64))
+                .map(|k| (cutoff_freq).powf(k as f64))
                 .collect::<Vec<_>>(),
         ),
     };
@@ -92,15 +92,15 @@ fn reverse_bessel_polynomial(order: usize) -> DVector<f64> {
 
 pub fn design_chebyshev1(
     order: usize,
-    cutoff_frequency: f64,
+    cutoff_freq: f64,
     ripple_db: f64,
     filter_type: FilterType,
 ) -> ContinuousTransferFunction {
     let ripple = f64::sqrt(10.0_f64.powf(ripple_db / 10.0) - 1.0);
     let mut num = match filter_type {
-        FilterType::LowPass => dvector![
-            cutoff_frequency.powf(order as f64) / (2.0_f64.powf(order as f64 - 1.0) * ripple)
-        ],
+        FilterType::LowPass => {
+            dvector![cutoff_freq.powf(order as f64) / (2.0_f64.powf(order as f64 - 1.0) * ripple)]
+        }
         FilterType::HighPass => {
             stack![dvector![1.0 / (2.0_f64.powf(order as f64 - 1.0) * ripple)]; DVector::zeros(order)]
         }
@@ -111,7 +111,7 @@ pub fn design_chebyshev1(
         FilterType::LowPass => {
             for k in 1..=order {
                 let theta = (PI / 2.0) * (2.0 * k as f64 - 1.0) / order as f64;
-                poles[k - 1] = cutoff_frequency
+                poles[k - 1] = cutoff_freq
                     * Complex::new(
                         -1.0 * (((1.0 / order as f64) * (1.0 / ripple).asinh()).sinh()
                             * theta.sin())
@@ -131,7 +131,7 @@ pub fn design_chebyshev1(
             }
             num[0] /= (-poles.clone()).product().re;
 
-            poles = poles.map(|e| e / cutoff_frequency);
+            poles = poles.map(|e| e / cutoff_freq);
         }
     }
     let den = match filter_type {
@@ -175,7 +175,7 @@ pub fn chebyshev1_polynomial(order: usize) -> DVector<f64> {
 
 pub fn design_chebyshev2(
     order: usize,
-    cutoff_frequency: f64,
+    cutoff_freq: f64,
     ripple_db: f64,
     filter_type: FilterType,
 ) -> ContinuousTransferFunction {
@@ -200,12 +200,12 @@ pub fn design_chebyshev2(
 
     match filter_type {
         FilterType::LowPass => {
-            poles_den = poles_den.map(|e| e * cutoff_frequency);
-            poles_num = poles_num.map(|e| e * cutoff_frequency);
+            poles_den = poles_den.map(|e| e * cutoff_freq);
+            poles_num = poles_num.map(|e| e * cutoff_freq);
         }
         FilterType::HighPass => {
-            poles_den = poles_den.map(|e| cutoff_frequency / e);
-            poles_num = poles_num.map(|e| cutoff_frequency / e);
+            poles_den = poles_den.map(|e| cutoff_freq / e);
+            poles_num = poles_num.map(|e| cutoff_freq / e);
         }
     }
 
@@ -238,8 +238,8 @@ pub fn design_chebyshev2(
     ContinuousTransferFunction::new(num, den)
 }
 
-pub fn digital_to_analog_cutoff(digital_cutoff: f64, sample_frequency: f64) -> f64 {
-    2.0 * sample_frequency * (PI * digital_cutoff / sample_frequency).tan()
+pub fn digital_to_analog_cutoff(digital_cutoff: f64, sample_rate: f64) -> f64 {
+    2.0 * sample_rate * (PI * digital_cutoff / sample_rate).tan()
 }
 
 #[cfg(test)]
@@ -255,12 +255,12 @@ mod tests {
     #[case(4, 1.0, vec![1.0], vec![1.0, (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(), 2.0 + (2.0 + f64::sqrt(2.0)).sqrt() * (2.0 - f64::sqrt(2.0)).sqrt(), (2.0 + f64::sqrt(2.0)).sqrt() + (2.0 - f64::sqrt(2.0)).sqrt(), 1.0], 1e-14)]
     fn test_butterworth_low_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_butter(order, cutoff_frequency, FilterType::LowPass);
+        let tf = design_butter(order, cutoff_freq, FilterType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -274,12 +274,12 @@ mod tests {
     #[case(4, 10.0, vec![1.0, 0.0, 0.0, 0.0, 0.0], vec![1.0, 26.131259297527535, 341.4213562373095, 2613.125929752753, 10000.0], 1e-14)]
     fn test_butterworth_high_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_butter(order, cutoff_frequency, FilterType::HighPass);
+        let tf = design_butter(order, cutoff_freq, FilterType::HighPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -292,12 +292,12 @@ mod tests {
     #[case(5, 1.0, vec![945.0], vec![1.0, 15.0, 105.0, 420.0, 945.0, 945.0], 1e-15)]
     fn test_bessel_low_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_bessel(order, cutoff_frequency, FilterType::LowPass);
+        let tf = design_bessel(order, cutoff_freq, FilterType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -323,13 +323,13 @@ mod tests {
     #[case(3, 100.0, 3.0, vec![250594.32325190006], vec![1.0, 59.72404165413484, 9283.480575752415, 250594.32325190003], 1e-9)]
     fn test_chebyshev1_low_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] ripple_db: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev1(order, cutoff_frequency, ripple_db, FilterType::LowPass);
+        let tf = design_chebyshev1(order, cutoff_freq, ripple_db, FilterType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -344,13 +344,13 @@ mod tests {
     #[case(3, 100.0, 3.0, vec![1.0, 0.0, 0.0, 0.0], vec![1.0, 370.45853454631384, 23832.9587355016, 3990513.3804439357], 1e-8)]
     fn test_chebyshev1_high_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] ripple_db: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev1(order, cutoff_frequency, ripple_db, FilterType::HighPass);
+        let tf = design_chebyshev1(order, cutoff_freq, ripple_db, FilterType::HighPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -361,13 +361,13 @@ mod tests {
     #[case(3, 100.0, 1.0, vec![589.5680185080812, 0.0, 7860906.913441084], vec![1.0, 631.729847643468, 25746.0759780469, 7860906.913441085], 1e-8)]
     fn test_chebyshev2_low_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] ripple_db: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev2(order, cutoff_frequency, ripple_db, FilterType::LowPass);
+        let tf = design_chebyshev2(order, cutoff_freq, ripple_db, FilterType::LowPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
@@ -379,13 +379,13 @@ mod tests {
     #[case(3, 100.0, 2.0, vec![1.0, 0.0, 7500.0, 0.0], vec![1.0, 47.42911405686058, 8624.760430109342, 191195.77539480195], 1e-13)]
     fn test_chebyshev2_high_pass(
         #[case] order: usize,
-        #[case] cutoff_frequency: f64,
+        #[case] cutoff_freq: f64,
         #[case] ripple_db: f64,
         #[case] expected_num: Vec<f64>,
         #[case] expected_den: Vec<f64>,
         #[case] epsilon: f64,
     ) {
-        let tf = design_chebyshev2(order, cutoff_frequency, ripple_db, FilterType::HighPass);
+        let tf = design_chebyshev2(order, cutoff_freq, ripple_db, FilterType::HighPass);
         assert_relative_eq!(tf.num, DVector::from_vec(expected_num), epsilon = epsilon);
         assert_relative_eq!(tf.den, DVector::from_vec(expected_den), epsilon = epsilon);
     }
