@@ -63,13 +63,11 @@ fn main() {
     let cutoff_freq_high_pass = 50.0;
     let cutoff_freq_low_pass = 50.0;
 
-    let alpha = 0.5;
     let signal_with_high_pass_filter = DiscreteTransferFunction::chebyshev2(
         order,
         cutoff_freq_high_pass,
         ripple,
         dt,
-        alpha,
         FilterType::HighPass,
     )
     .filtfilt(&signal, &t);
@@ -78,7 +76,6 @@ fn main() {
         cutoff_freq_low_pass,
         ripple,
         dt,
-        alpha,
         FilterType::LowPass,
     )
     .filtfilt(&signal, &t);

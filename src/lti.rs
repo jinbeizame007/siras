@@ -7,6 +7,8 @@ use crate::filter_design::{
 use crate::math::expm;
 use crate::signal_extension::anti_symmetric_reflect_extension;
 
+const DEFAULT_ALPHA: f64 = 0.5;
+
 pub trait LTI {
     fn reset(&mut self);
     fn filtfilt(&mut self, u: &DVector<f64>, t: &DVector<f64>) -> DVector<f64>;
@@ -125,28 +127,16 @@ impl DiscreteTransferFunction {
         }
     }
 
-    pub fn butter(
-        order: usize,
-        cutoff_freq: f64,
-        dt: f64,
-        alpha: f64,
-        filter_type: FilterType,
-    ) -> Self {
+    pub fn butter(order: usize, cutoff_freq: f64, dt: f64, filter_type: FilterType) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
-        design_butter(order, normalized_cutoff_freq, filter_type).to_discrete(dt, alpha)
+        design_butter(order, normalized_cutoff_freq, filter_type).to_discrete(dt, DEFAULT_ALPHA)
     }
 
-    pub fn bessel(
-        order: usize,
-        cutoff_freq: f64,
-        dt: f64,
-        alpha: f64,
-        filter_type: FilterType,
-    ) -> Self {
+    pub fn bessel(order: usize, cutoff_freq: f64, dt: f64, filter_type: FilterType) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
-        design_bessel(order, normalized_cutoff_freq, filter_type).to_discrete(dt, alpha)
+        design_bessel(order, normalized_cutoff_freq, filter_type).to_discrete(dt, DEFAULT_ALPHA)
     }
 
     pub fn chebyshev1(
@@ -154,13 +144,12 @@ impl DiscreteTransferFunction {
         cutoff_freq: f64,
         ripple_db: f64,
         dt: f64,
-        alpha: f64,
         filter_type: FilterType,
     ) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
         design_chebyshev1(order, normalized_cutoff_freq, ripple_db, filter_type)
-            .to_discrete(dt, alpha)
+            .to_discrete(dt, DEFAULT_ALPHA)
     }
 
     pub fn chebyshev2(
@@ -168,13 +157,12 @@ impl DiscreteTransferFunction {
         cutoff_freq: f64,
         ripple_db: f64,
         dt: f64,
-        alpha: f64,
         filter_type: FilterType,
     ) -> Self {
         let sample_rate = 1.0 / dt;
         let normalized_cutoff_freq = digital_to_analog_cutoff(cutoff_freq, sample_rate);
         design_chebyshev2(order, normalized_cutoff_freq, ripple_db, filter_type)
-            .to_discrete(dt, alpha)
+            .to_discrete(dt, DEFAULT_ALPHA)
     }
 
     pub fn step(&mut self, input: f64) -> f64 {

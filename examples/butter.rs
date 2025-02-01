@@ -62,23 +62,12 @@ fn main() {
     let cutoff_freq_high_pass = 20.0;
     let cutoff_freq_low_pass = 20.0;
 
-    let alpha = 0.5;
-    let signal_with_high_pass_filter = DiscreteTransferFunction::butter(
-        order,
-        cutoff_freq_high_pass,
-        dt,
-        alpha,
-        FilterType::HighPass,
-    )
-    .filtfilt(&signal, &t);
-    let signal_with_low_pass_filter = DiscreteTransferFunction::butter(
-        order,
-        cutoff_freq_low_pass,
-        dt,
-        alpha,
-        FilterType::LowPass,
-    )
-    .filtfilt(&signal, &t);
+    let signal_with_high_pass_filter =
+        DiscreteTransferFunction::butter(order, cutoff_freq_high_pass, dt, FilterType::HighPass)
+            .filtfilt(&signal, &t);
+    let signal_with_low_pass_filter =
+        DiscreteTransferFunction::butter(order, cutoff_freq_low_pass, dt, FilterType::LowPass)
+            .filtfilt(&signal, &t);
 
     let plot_dir = "examples/plots";
     if !std::path::Path::new(plot_dir).exists() {
